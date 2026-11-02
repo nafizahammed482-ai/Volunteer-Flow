@@ -1,0 +1,4011 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>চ্যাট - Volunteer Flow</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+    
+    <style>
+        /* Chat Page Specific Styles - Matching Other Pages */
+        .chat-page {
+            padding: 0;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--card);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+        }
+
+        .header-inner {
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, var(--accent) 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .header-icon:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        /* Back Button for Conversation */
+        .conv-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-weight: 500;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .conv-back-btn:hover {
+            color: var(--accent);
+            background: var(--card-hover);
+            transform: translateX(-3px);
+        }
+
+        /* Tab Switch - Card Style like Request Page */
+        .tab-switch {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            gap: 4px;
+        }
+
+        .tab-switch-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: transparent;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-switch-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 10px var(--glow);
+        }
+
+        .tab-switch-btn .badge {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            font-size: 10px;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .tab-switch-btn:not(.active) .badge {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Search Card */
+        .search-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        /* Chat List */
+        .chat-list, .volunteer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Chat Item Card - Like Activity Card */
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            background: var(--card);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            /* FIX: মোবাইলে long-press করলে ব্রাউজারের নিজস্ব callout/text-selection মেনু
+               কাস্টম কনটেক্সট-মেনুর সাথে সংঘর্ষ করে, ফলে "চ্যাট ডিলিট" মেনু ঠিকভাবে খোলে না —
+               তাই টাচ-কলআউট ও সিলেকশন বন্ধ করা হলো */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+
+        .chat-item:hover {
+            transform: translateX(5px);
+            border-color: var(--accent);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        .chat-avatar {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .chat-avatar i {
+            font-size: 48px;
+            color: var(--accent);
+        }
+
+        .chat-avatar img,
+        .volunteer-avatar img,
+        .conv-user-avatar img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            display: block;
+        }
+
+        .conv-user-avatar img {
+            width: 44px;
+            height: 44px;
+        }
+
+        .online-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 14px;
+            height: 14px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 2px solid var(--card);
+        }
+
+        .offline-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 14px;
+            height: 14px;
+            background: var(--muted);
+            border-radius: 50%;
+            border: 2px solid var(--card);
+        }
+
+        .chat-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-name-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .chat-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--fg);
+        }
+
+        .chat-role {
+            font-size: 10px;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .chat-time {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .chat-last-msg {
+            font-size: 13px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .unread-badge {
+            background: var(--accent);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+        }
+
+        /* Volunteer Card */
+        .volunteer-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            background: var(--card);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .volunteer-card:hover {
+            transform: translateX(5px);
+            border-color: var(--accent);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        .volunteer-avatar i {
+            font-size: 48px;
+            color: var(--accent);
+        }
+
+        .volunteer-info {
+            flex: 1;
+        }
+
+        .volunteer-name-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .volunteer-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--fg);
+        }
+
+        .volunteer-role {
+            font-size: 10px;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .volunteer-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11.5px;
+            color: var(--muted);
+        }
+
+        .volunteer-details span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .volunteer-details i {
+            width: 14px;
+            color: var(--accent);
+        }
+
+        .msg-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .msg-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        /* Conversation Page */
+        .conversation-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 200;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .conversation-page.active {
+            transform: translateX(0);
+        }
+
+        /* Conversation Header */
+        .conv-header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .conv-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .conv-back:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .conv-user {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .conv-user-avatar i {
+            font-size: 44px;
+            color: var(--accent);
+        }
+
+        .conv-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .conv-user-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--fg);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conv-user-status {
+            font-size: 11.5px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conv-user-status.online {
+            color: #10b981;
+        }
+
+        /* NEW: হেডারে নাম এখন একাই দেখানো হয় (ডেজিগনেশন আলাদা ছোট ব্যাজে) — যাতে বড় নাম যতটা সম্ভব দেখা যায় */
+        .conv-user-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .conv-user-designation {
+            flex-shrink: 0;
+            font-size: 10px;
+            color: var(--muted);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            padding: 1px 7px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .conv-user-meta .conv-user-status {
+            min-width: 0;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Date Divider */
+        .date-divider {
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .date-divider span {
+            background: var(--bg-secondary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+        /* Message Row */
+        .message-row {
+            display: flex;
+            margin-bottom: 8px;
+            /* FIX: একই কারণে মেসেজ-বাবলেও long-press করলে নেটিভ টেক্সট-সিলেকশন/callout
+               মেনু চলে আসতো এবং Edit/Delete for me/Delete for everyone কাস্টম মেনু খুলতো না
+               বা মাঝপথে বাতিল হয়ে যেত — তাই এখানেও বন্ধ করা হলো */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+
+        .message-row.sent {
+            justify-content: flex-end;
+        }
+
+        .message-row.received {
+            justify-content: flex-start;
+        }
+
+        /* Message Bubble */
+        .message-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            word-break: break-word;
+            position: relative;
+        }
+
+        .message-row.sent .message-bubble {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-row.received .message-bubble {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Message Footer (Time + Status) */
+        .message-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            margin-top: 4px;
+            font-size: 10px;
+        }
+
+        .message-row.sent .message-footer {
+            justify-content: flex-end;
+        }
+
+        .message-row.received .message-footer {
+            justify-content: flex-start;
+        }
+
+        .message-time {
+            color: var(--muted);
+        }
+
+        .message-status {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .message-status i {
+            font-size: 10px;
+        }
+
+        .message-status.delivered i { color: #10b981; }
+        .message-status.read i { color: #3b82f6; }
+        .message-status.sent i { color: var(--muted); }
+
+        /* Message Actions (Edit/Delete) */
+        .message-actions {
+            display: none;
+            position: absolute;
+            top: -25px;
+            right: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 8px;
+            gap: 12px;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .message-row.sent:hover .message-actions {
+            display: flex;
+        }
+
+        .message-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .message-actions button:hover {
+            color: var(--accent);
+        }
+
+        .message-actions .delete-btn:hover {
+            color: var(--danger);
+        }
+
+        /* Edit Message Input */
+        .edit-message-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+        }
+
+        .edited-badge {
+            font-size: 9px;
+            opacity: 0.7;
+            margin-left: 6px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--muted);
+            border-radius: 50%;
+            animation: typingAnim 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingAnim {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* Message Input Area */
+        .message-input-area {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 380px) {
+            .input-wrapper {
+                gap: 6px;
+            }
+            .message-input {
+                padding: 10px 14px;
+                font-size: 13.5px;
+            }
+        }
+
+        .message-input {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 16px;
+            border: 2px solid var(--border);
+            border-radius: 30px;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Hind Siliguri', sans-serif;
+            font-size: 14px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Chat Item Long-Press Delete Menu */
+        .chat-item.long-pressing {
+            transform: scale(0.97);
+            opacity: 0.8;
+        }
+
+        .chat-context-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 300;
+            display: none;
+        }
+
+        .chat-context-overlay.active {
+            display: block;
+        }
+
+        .chat-context-menu {
+            position: fixed;
+            z-index: 301;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px var(--shadow);
+            overflow: hidden;
+            min-width: 200px;
+            display: none;
+        }
+
+        .chat-context-menu.active {
+            display: block;
+        }
+
+        .chat-context-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--fg);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .chat-context-menu-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .chat-context-menu-item.danger {
+            color: var(--danger);
+        }
+
+        /* Loading & Empty States */
+        .loading-placeholder, .empty-placeholder {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .loading-placeholder i, .empty-placeholder i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+            opacity: 0.4;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent, var(--bg) 20%);
+            padding-top: 20px;
+            z-index: 100;
+        }
+
+        .bottom-nav-inner {
+            display: flex;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 15px var(--shadow);
+        }
+
+        .bottom-tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
+            position: relative;
+        }
+
+        .bottom-tab.active {
+            color: var(--accent);
+        }
+
+        .bottom-tab i {
+            font-size: 1.3rem;
+        }
+
+        .bottom-tab span {
+            font-size: 0.7rem;
+        }
+
+        .bottom-tab .badge {
+            position: absolute;
+            top: 0;
+            right: calc(50% - 20px);
+            background: var(--danger);
+            color: white;
+            font-size: 0.6rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ==================== CALL BUTTONS (Header) ==================== */
+        .conv-call-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .call-action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .call-action-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* ==================== ATTACH / MIC BUTTONS ==================== */
+        .attach-btn, .mic-btn {
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            color: var(--accent);
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .attach-btn:hover, .mic-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .mic-btn.recording-active {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* ==================== RECORDING BAR ==================== */
+        .recording-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .recording-bar.active {
+            display: flex;
+        }
+
+        .recording-cancel-btn, .recording-send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .recording-cancel-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--danger);
+        }
+
+        .recording-send-btn {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+        }
+
+        .recording-indicator {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--fg);
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: recordPulse 1s infinite;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        /* ==================== IMAGE / AUDIO MESSAGE BUBBLES ==================== */
+        .msg-image {
+            max-width: 100%;
+            width: 220px;
+            border-radius: 14px;
+            cursor: pointer;
+            display: block;
+        }
+
+        .message-row.sent .message-bubble:has(.msg-image),
+        .message-row.received .message-bubble:has(.msg-image),
+        .message-row.sent .message-bubble:has(.voice-msg),
+        .message-row.received .message-bubble:has(.voice-msg) {
+            padding: 6px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        /* ==================== VOICE MESSAGE (custom player) ==================== */
+        .voice-msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            min-width: 190px;
+            max-width: 260px;
+        }
+
+        .voice-msg audio {
+            display: none;
+        }
+
+        .message-row.sent .voice-msg {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message-row.received .voice-msg {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            border-bottom-left-radius: 6px;
+        }
+
+        .voice-msg-play-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .voice-msg-play-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .message-row.sent .voice-msg-play-btn {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        .message-row.received .voice-msg-play-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .voice-msg-track {
+            flex: 1;
+            height: 4px;
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message-row.sent .voice-msg-track {
+            background: rgba(255,255,255,0.35);
+        }
+
+        .message-row.received .voice-msg-track {
+            background: var(--border);
+        }
+
+        .voice-msg-progress {
+            height: 100%;
+            width: 0%;
+            border-radius: 2px;
+        }
+
+        .message-row.sent .voice-msg-progress {
+            background: #ffffff;
+        }
+
+        .message-row.received .voice-msg-progress {
+            background: var(--accent);
+        }
+
+        .voice-msg-time {
+            font-size: 10.5px;
+            flex-shrink: 0;
+            opacity: 0.9;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* ==================== CALL LOG DIVIDER ==================== */
+        .call-log-divider span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .call-log-divider.missed span {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        /* ==================== CALL OVERLAYS (Outgoing / Incoming) ==================== */
+        .call-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: linear-gradient(160deg, var(--accent-dark) 0%, #0f172a 100%);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .call-overlay.active {
+            display: flex;
+        }
+
+        .call-overlay-inner {
+            text-align: center;
+            color: white;
+            padding: 24px;
+        }
+
+        .call-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            animation: callAvatarPulse 1.6s infinite;
+        }
+
+        .call-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .call-avatar-large i {
+            font-size: 64px;
+            color: white;
+        }
+
+        @keyframes callAvatarPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.25); }
+            50% { box-shadow: 0 0 0 20px rgba(255,255,255,0); }
+        }
+
+        .call-user-name {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .call-status-text {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+
+        .call-end-btn, .call-decline-btn, .call-accept-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .call-end-btn, .call-decline-btn {
+            background: var(--danger);
+            color: white;
+        }
+
+        .call-accept-btn {
+            background: #10b981;
+            color: white;
+            animation: callAcceptPulse 1.2s infinite;
+        }
+
+        @keyframes callAcceptPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .call-end-btn:hover, .call-decline-btn:hover, .call-accept-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .incoming-call-actions {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        /* NEW: কল overlay মিনিমাইজ বাটন */
+        .call-minimize-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .call-minimize-btn:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+        /* NEW: মিনিমাইজ করা কলের ফ্লোটিং বাবল (Messenger/WhatsApp স্টাইল) */
+        .call-bubble {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, var(--accent-dark));
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            z-index: 550;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            animation: callBubblePulse 1.6s infinite;
+        }
+
+        .call-bubble.active {
+            display: flex;
+        }
+
+        .call-bubble-avatar i {
+            font-size: 24px;
+            color: white;
+        }
+
+        @keyframes callBubblePulse {
+            0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(16,185,129,0.5); }
+            50% { box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 0 10px rgba(16,185,129,0); }
+        }
+
+        /* ==================== NEW: LIVE WEBRTC CALL SCREEN ==================== */
+        .live-call-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 650;
+            background: linear-gradient(160deg, #0f2027, #203a43, #2c5364);
+            flex-direction: column;
+        }
+
+        .live-call-screen.active {
+            display: flex;
+        }
+
+        .remote-video {
+            display: none;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .live-call-audio-avatar {
+            display: none;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .live-call-audio-avatar i {
+            font-size: 130px;
+            color: rgba(255,255,255,0.85);
+        }
+
+        /* NEW: অডিও কলে আসল প্রোফাইল ফটো দেখানোর জন্য */
+        .live-call-audio-avatar-photo {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 0 6px rgba(255,255,255,0.08);
+            animation: callAvatarPulse 1.6s infinite;
+        }
+
+        .live-call-audio-avatar-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* NEW: লাউডস্পিকার অন/অফ বাটন — মাইক/ক্যামেরা বাটনের মতোই স্টাইল, off হলে হাইলাইট হবে */
+        .lc-control-btn.speaker.off {
+            background: rgba(255,255,255,0.85);
+            color: #111;
+        }
+
+        .local-video-pip {
+            display: none;
+            position: absolute;
+            top: 70px;
+            right: 16px;
+            width: 100px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.4);
+            z-index: 2;
+            background: #111;
+        }
+
+        .live-call-top-bar {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 20px;
+        }
+
+        .live-call-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .live-call-name {
+            color: white;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .live-call-timer {
+            color: rgba(255,255,255,0.75);
+            font-size: 12.5px;
+        }
+
+        .live-call-controls {
+            position: relative;
+            z-index: 2;
+            margin-top: auto;
+            display: flex;
+            justify-content: center;
+            gap: 26px;
+            padding: 26px 20px 40px;
+        }
+
+        .lc-control-btn {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.18);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .lc-control-btn.off {
+            background: rgba(255,255,255,0.85);
+            color: #111;
+        }
+
+        .lc-control-btn.end {
+            background: #ef4444;
+        }
+
+        .lc-control-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        /* ==================== IMAGE VIEWER LIGHTBOX ==================== */
+        .image-viewer {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 600;
+            background: rgba(0,0,0,0.9);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .image-viewer.active {
+            display: flex;
+        }
+
+        .image-viewer img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        /* NEW: ছবি ভিউয়ারে ডাউনলোড/ক্লোজ অ্যাকশন বাটন */
+        .image-viewer-actions {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 601;
+        }
+
+        .iv-action-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .iv-action-btn:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+        @media (max-width: 480px) {
+            .volunteer-card {
+                flex-wrap: wrap;
+            }
+            .volunteer-info {
+                min-width: 0;
+                flex-basis: calc(100% - 62px);
+            }
+            .volunteer-details {
+                flex-direction: column;
+                gap: 4px;
+            }
+            .msg-btn {
+                flex: 1 0 100%;
+                margin-top: 10px;
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+            .chat-name {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">Volunteer Flow</div>
+            <div class="header-actions">
+                <button class="header-icon" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="chat-page">
+            <!-- Tab Switch -->
+            <div class="tab-switch">
+                <button class="tab-switch-btn active" data-tab="chat">
+                    <i class="fas fa-comment-dots"></i> চ্যাট
+                    <span class="badge" id="chatTabBadge">0</span>
+                </button>
+                <button class="tab-switch-btn" data-tab="volunteers">
+                    <i class="fas fa-users"></i> ভলান্টিয়ার
+                </button>
+            </div>
+
+            <!-- Search Card -->
+            <div class="search-card">
+                <div class="search-box">
+                    <i class="fas fa-search" style="position: absolute; margin-left: 12px; margin-top: 14px; color: var(--muted);"></i>
+                    <input type="text" class="search-input" id="searchInput" placeholder="নাম বা মেসেজ সার্চ করুন..." style="padding-left: 40px;">
+                </div>
+            </div>
+
+            <!-- Chat Tab Content -->
+            <div id="chatTabContent" class="tab-content active">
+                <div class="chat-list" id="chatList">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                        চ্যাট লোড হচ্ছে...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volunteers Tab Content -->
+            <div id="volunteersTabContent" class="tab-content" style="display: none;">
+                <div class="volunteer-list" id="volunteerList">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                        ভলান্টিয়ার লোড হচ্ছে...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chat Item Long-Press Context Menu (Messenger-style) -->
+    <div class="chat-context-overlay" id="chatContextOverlay"></div>
+    <div class="chat-context-menu" id="chatContextMenu">
+        <div class="chat-context-menu-item danger" id="chatContextDeleteBtn">
+            <i class="fas fa-trash-alt"></i> চ্যাট ডিলিট করুন
+        </div>
+    </div>
+
+    <!-- Message Long-Press Context Menu -->
+    <div class="chat-context-overlay" id="msgContextOverlay"></div>
+    <div class="chat-context-menu" id="msgContextMenu">
+        <div class="chat-context-menu-item" id="msgEditBtn">
+            <i class="fas fa-edit"></i> এডিট করুন
+        </div>
+        <!-- NEW: "ডিলিট ফর মি" — যেকোনো মেসেজে (নিজের/অন্যের) দেখানো হয়, শুধু নিজের ভিউ থেকে সরায় -->
+        <div class="chat-context-menu-item" id="msgDeleteForMeBtn">
+            <i class="fas fa-trash-alt"></i> ডিলিট ফর মি
+        </div>
+        <!-- NEW: "ডিলিট ফর এভরিওয়ান" — শুধু নিজের পাঠানো মেসেজে দেখানো হয় -->
+        <div class="chat-context-menu-item danger" id="msgDeleteForEveryoneBtn">
+            <i class="fas fa-trash-alt"></i> ডিলিট ফর এভরিওয়ান
+        </div>
+        <div class="chat-context-menu-item" id="msgCancelBtn">
+            <i class="fas fa-times"></i> বাতিল
+        </div>
+    </div>
+
+    <!-- NEW FIX #1: Call overlay markup আগে মূল জাভাস্ক্রিপ্ট ব্লকের পরে বসানো ছিল, তাই getElementById() null পেত এবং
+         Accept/Decline/Cancel বাটনে কখনো click listener বসতোই না। এখানে জাভাস্ক্রিপ্ট ব্লকের আগে সরিয়ে আনা হলো। -->
+    <!-- Outgoing Call Overlay -->
+    <div class="call-overlay" id="outgoingCallOverlay">
+        <div class="call-overlay-inner">
+            <button class="call-minimize-btn" id="minimizeOutgoingCallBtn" title="মিনিমাইজ করুন">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="call-avatar-large" id="outgoingCallAvatar"><i class="fas fa-user-circle"></i></div>
+            <div class="call-user-name" id="outgoingCallName"></div>
+            <div class="call-status-text" id="outgoingCallStatusText">রিং হচ্ছে...</div>
+            <button class="call-end-btn" id="cancelOutgoingCallBtn" title="কল কাটুন">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Incoming Call Popup -->
+    <div class="call-overlay" id="incomingCallOverlay">
+        <div class="call-overlay-inner">
+            <button class="call-minimize-btn" id="minimizeIncomingCallBtn" title="মিনিমাইজ করুন">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="call-avatar-large" id="incomingCallAvatar"><i class="fas fa-user-circle"></i></div>
+            <div class="call-user-name" id="incomingCallName"></div>
+            <div class="call-status-text" id="incomingCallTypeText">ইনকামিং কল...</div>
+            <div class="incoming-call-actions">
+                <button class="call-decline-btn" id="declineCallBtn" title="প্রত্যাখ্যান">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+                <button class="call-accept-btn" id="acceptCallBtn" title="গ্রহণ করুন">
+                    <i class="fas fa-phone"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: মিনিমাইজ করা কলের ফ্লোটিং বাবল (Messenger/WhatsApp স্টাইল) -->
+    <div class="call-bubble" id="callBubble" onclick="expandCall()" title="কলে ফিরে যেতে ট্যাপ করুন">
+        <div class="call-bubble-avatar"><i class="fas fa-phone-volume"></i></div>
+    </div>
+
+    <!-- NEW: লাইভ WebRTC কল স্ক্রিন (Jitsi-এর বদলে নিজস্ব ইন-অ্যাপ কল UI) -->
+    <div class="live-call-screen" id="liveCallScreen">
+        <video id="remoteVideoEl" class="remote-video" autoplay playsinline></video>
+        <div class="live-call-audio-avatar" id="liveCallAudioAvatar"><i class="fas fa-user-circle"></i></div>
+        <video id="localVideoEl" class="local-video-pip" autoplay playsinline muted></video>
+        <div class="live-call-top-bar">
+            <button class="call-minimize-btn" id="minimizeLiveCallBtn" title="মিনিমাইজ করুন">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="live-call-info">
+                <div class="live-call-name" id="liveCallName"></div>
+                <div class="live-call-timer" id="liveCallTimer">00:00</div>
+            </div>
+        </div>
+        <div class="live-call-controls">
+            <button class="lc-control-btn" id="toggleMicBtn" title="মাইক অন/অফ">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="lc-control-btn" id="toggleCamBtn" title="ক্যামেরা অন/অফ">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="lc-control-btn speaker" id="toggleSpeakerBtn" title="লাউডস্পিকার অন/অফ">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <button class="lc-control-btn end" id="endLiveCallBtn" title="কল শেষ করুন">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Conversation Page -->
+    <div class="conversation-page" id="conversationPage">
+        <div class="conv-header">
+            <div class="conv-back" id="convBackBtn">
+                <i class="fas fa-arrow-left"></i>
+            </div>
+            <div class="conv-user">
+                <div class="conv-user-avatar" id="convAvatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="conv-user-info">
+                    <div class="conv-user-name" id="convName" title="">লোড হচ্ছে...</div>
+                    <!-- NEW: ডেজিগনেশনকে নামের লাইন থেকে আলাদা করে ছোট ব্যাজে সরানো হলো, যাতে বড় নাম যতটা সম্ভব দেখা যায় -->
+                    <div class="conv-user-meta">
+                        <span class="conv-user-designation" id="convDesignation"></span>
+                        <div class="conv-user-status" id="convStatus">
+                            <i class="fas fa-circle"></i> অনলাইন
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="conv-call-actions">
+                <button class="call-action-btn" id="audioCallBtn" title="অডিও কল">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="call-action-btn" id="videoCallBtn" title="ভিডিও কল">
+                    <i class="fas fa-video"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+            <div class="loading-placeholder">
+                <i class="fas fa-spinner fa-pulse"></i>
+                মেসেজ লোড হচ্ছে...
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            <span>টাইপ করছেন...</span>
+        </div>
+
+        <div class="message-input-area">
+            <div class="input-wrapper" id="inputWrapper">
+                <button class="attach-btn" id="attachBtn" title="ছবি পাঠান">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="file" id="imageFileInput" accept="image/*" style="display:none;">
+                <input type="text" class="message-input" id="messageInput" placeholder="মেসেজ লিখুন...">
+                <button class="mic-btn" id="micBtn" title="ভয়েস মেসেজ">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button class="send-btn" id="sendMsgBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="recording-bar" id="recordingBar">
+                <button class="recording-cancel-btn" id="recordingCancelBtn" title="বাতিল">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <div class="recording-indicator">
+                    <span class="recording-dot"></span>
+                    <span id="recordingTimer">0:00</span>
+                </div>
+                <button class="recording-send-btn" id="recordingSendBtn" title="পাঠান">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-tab" data-page="home" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i>
+                <span>হোম</span>
+            </button>
+            <button class="bottom-tab" data-page="profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+                <span>প্রোফাইল</span>
+            </button>
+            <button class="bottom-tab active" data-page="chat">
+                <i class="fas fa-comment-dots"></i>
+                <span>চ্যাট</span>
+                <span class="badge" id="bottomChatBadge">0</span>
+            </button>
+            <button class="bottom-tab" data-page="request" onclick="window.location.href='request.html'">
+                <i class="fas fa-clipboard-list"></i>
+                <span>রিকোয়েস্ট</span>
+                <span class="badge" id="bottomRequestBadge">0</span>
+            </button>
+            <button class="bottom-tab" data-page="leaderboard" onclick="window.location.href='leaderboard.html'">
+                <i class="fas fa-trophy"></i>
+                <span>লিডারবোর্ড</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><i class="fas fa-bars"></i> মেনু</h3>
+        <div class="sidebar-item" onclick="window.location.href='home.html'">
+            <i class="fas fa-home"></i> <span>হোম</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html'">
+            <i class="fas fa-user"></i> <span>প্রোফাইল</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='settings.html'">
+            <i class="fas fa-cog"></i> <span>সেটিংস</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='our_team.html'">
+            <i class="fas fa-users"></i> <span>আমার দল</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='event.html'">
+            <i class="fas fa-calendar-alt"></i> <span>ইভেন্ট</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html#activities'">
+            <i class="fas fa-tasks"></i> <span>আমার কার্যক্রম</span>
+        </div>
+        <div class="theme-toggle">
+            <span><i class="fas fa-moon"></i> ডার্ক মোড</span>
+            <button id="themeToggleSidebar"></button>
+        </div>
+        <div class="sidebar-item logout-item" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>লগআউট</span>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <script>
+        // ==================== FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkbx3T_QrtgHWCfAv_6Tltc_W5YxrFH-Q",
+            authDomain: "bbds-blood-network.firebaseapp.com",
+            databaseURL: "https://bbds-blood-network-default-rtdb.firebaseio.com",
+            projectId: "bbds-blood-network",
+            storageBucket: "bbds-blood-network.firebasestorage.app",
+            messagingSenderId: "865903022296",
+            appId: "1:865903022296:web:5322b0370c68e049fc87ad"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // ==================== GLOBAL VARIABLES ====================
+        let currentUserId = null;
+        let currentUserName = null;
+        let currentChatRoom = null;
+        let currentChatUser = null;
+        let chatMessagesRef = null;
+        let otherUserStatusRef = null;
+        let typingListenerRef = null;
+        let allChatRooms = [];
+        let allOtherVolunteers = [];
+        let typingTimeout = null;
+        let currentMessagesCache = {};
+        let currentlyPlayingAudioId = null;
+
+        // ==================== MEDIA / CALL CONFIG ====================
+        const CLOUDINARY_CLOUD_NAME = 'xceppkcl';
+        const CLOUDINARY_UPLOAD_PRESET = 'Chat of BBDS Team';
+        const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
+        const CALL_ROOM_PREFIX = 'VolunteerFlow_';
+        const CALL_RING_TIMEOUT_MS = 45000; // ৪৫ সেকেন্ড পর অটো-মিসড
+        // NEW: Jitsi (meet.jit.si) বাদ দিয়ে নিজস্ব WebRTC + Firebase RTDB সিগন্যালিং —
+        // Google-এর ফ্রি পাবলিক STUN সার্ভার দিয়ে সরাসরি পিয়ার-টু-পিয়ার কল হবে, কোনো থার্ড-পার্টি
+        // মডারেটর/লগইন নিয়মের উপর নির্ভর করতে হবে না।
+        const RTC_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Voice recording state
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordingStream = null;
+        let recordingStartTs = null;
+        let recordingTimerInterval = null;
+        let isRecordingCancelled = false;
+
+        // Outgoing call state
+        let outgoingCallRoomId = null;
+        let outgoingCallStatusRef = null;
+        let outgoingCallTimer = null;
+
+        // Incoming call state
+        let activeIncomingCallRoomId = null;
+        let incomingCallData = null;
+        const dismissedCallIds = new Set();
+
+        // NEW: লাইভ WebRTC কল স্টেট
+        let peerConnection = null;
+        let localStream = null;
+        let remoteStream = null;
+        let isCallActive = false;
+        let currentCallRoomId = null;
+        let currentCallInfo = null;
+        let callStartTs = null;
+        let callDurationInterval = null;
+        let pendingRemoteCandidates = [];
+        let activeSignalRefs = []; // সিগন্যালিং-এর জন্য বসানো সব Firebase listener রেফারেন্স — cleanup-এ off() করার জন্য
+        let activeCallWatchRef = null; // অন্য পক্ষ কল কেটে দিলে/activeCall মুছে গেলে টের পাওয়ার জন্য
+
+        // NEW: কল মিনিমাইজ/বাবল স্টেট (ফিচার #2 — Messenger/WhatsApp স্টাইল মিনিমাইজ)
+        let isCallMinimized = false;
+        let callHistoryTrapped = false;
+        let isSpeakerOn = true; // NEW: লাউডস্পিকার চালু/বন্ধ অবস্থা ট্র্যাক করার জন্য
+
+        // NEW: সাউন্ড — কলিং টোন (আউটগোয়িং), রিংটোন (ইনকামিং), মেসেজ নোটিফিকেশন (ফিচার #3)
+        // ⚠️ এই তিনটা mp3 ফাইল chat.html-এর পাশে একটা "sounds" ফোল্ডারে রাখতে হবে:
+        //    sounds/dialing.mp3  (কলিং/রিং-ব্যাক টোন), sounds/ringtone.mp3 (ইনকামিং কল), sounds/notification.mp3 (মেসেজ)
+        const dialingSound = new Audio('sounds/dialing.mp3');
+        dialingSound.loop = true;
+        const ringtoneSound = new Audio('sounds/ringtone.mp3');
+        ringtoneSound.loop = true;
+        const notifSound = new Audio('sounds/notification.mp3');
+
+        function playSoundSafe(audioEl) {
+            try {
+                audioEl.currentTime = 0;
+                audioEl.play().catch(() => { /* অটোপ্লে ব্লক হলে চুপচাপ উপেক্ষা করা হয়, বাকি ফাংশন চলতে থাকে */ });
+            } catch (e) { /* ignore */ }
+        }
+
+        function stopSound(audioEl) {
+            try {
+                audioEl.pause();
+                audioEl.currentTime = 0;
+            } catch (e) { /* ignore */ }
+        }
+
+        // NEW: মেসেজ নোটিফিকেশন সাউন্ডের জন্য প্রতিটা রুমের সর্বশেষ জানা unreadCount ট্র্যাক করা হয়
+        let knownUnreadCounts = {};
+        let notifSoundReady = false; // প্রথম স্ন্যাপশটে সাউন্ড বাজানো হয় না (পুরনো unread-এর জন্য বাজলে বিরক্তিকর হতো)
+
+        // ==================== AUTH CHECK ====================
+        async function checkLogin() {
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('userName');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (userId && userName && (userRole === 'volunteer' || userRole === 'admin')) {
+                currentUserId = userId;
+                currentUserName = userName;
+                console.log("✅ Volunteer loaded:", {currentUserId, currentUserName});
+                
+                await database.ref('users/' + currentUserId).update({
+                    online: true,
+                    lastSeen: Date.now(),
+                    name: currentUserName
+                });
+                database.ref('users/' + currentUserId).onDisconnect().update({
+                    online: false,
+                    lastSeen: Date.now()
+                });
+                return true;
+            }
+            return false;
+        }
+
+        // ==================== LOAD VOLUNTEERS ====================
+        async function loadVolunteers() {
+            try {
+                const snapshot = await database.ref('users').once('value');
+                allOtherVolunteers = [];
+                
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    const uid = child.key;
+                    if (uid !== currentUserId && (user.role === 'volunteer' || user.role === 'admin')) {
+                        allOtherVolunteers.push({
+                            uid: uid,
+                            name: user.name || 'ভলান্টিয়ার',
+                            online: user.online || false,
+                            lastSeen: user.lastSeen || 0,
+                            avatarUrl: user.avatarUrl || '',
+                            designation: user.designation || (user.role === 'admin' ? 'এডমিন' : 'ভলান্টিয়ার'),
+                            address: user.district || 'বাংলাদেশ',
+                            phone: user.phone || 'N/A',
+                            bloodGroup: user.bloodGroup || 'N/A',
+                            role: user.role || 'volunteer'
+                        });
+                    }
+                });
+                
+                console.log("✅ Other volunteers found:", allOtherVolunteers.length);
+                renderVolunteerList();
+            } catch (error) {
+                console.error("Error loading volunteers:", error);
+            }
+        }
+
+        function renderVolunteerList() {
+            const container = document.getElementById('volunteerList');
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            let filtered = allOtherVolunteers.filter(v => v.name?.toLowerCase().includes(searchTerm));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="empty-placeholder">
+                    <i class="fas fa-user-friends"></i>
+                    <h4>কোনো ভলান্টিয়ার নেই</h4>
+                </div>`;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(vol => `
+                <div class="volunteer-card" onclick="startChatWithVolunteer('${vol.uid}', ${escapeJsAttr(vol.name)})">
+                    <div class="volunteer-avatar">
+                        ${avatarHtml(vol.avatarUrl, vol.online, vol.name)}
+                    </div>
+                    <div class="volunteer-info">
+                        <div class="volunteer-name-row">
+                            <span class="volunteer-name">${escapeHtml(vol.name)}</span>
+                            <span class="volunteer-role">${escapeHtml(vol.designation)}</span>
+                        </div>
+                        <div class="volunteer-details">
+                            <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vol.address)}</span>
+                            <span><i class="fas fa-tint"></i> ${vol.bloodGroup}</span>
+                            <span><i class="fas fa-phone"></i> ${vol.phone}</span>
+                            <span><i class="fas ${vol.online ? 'fa-circle' : 'fa-clock'}"></i> ${vol.online ? 'অনলাইন' : formatLastSeen(vol.lastSeen)}</span>
+                        </div>
+                    </div>
+                    <button class="msg-btn" onclick="event.stopPropagation(); startChatWithVolunteer('${vol.uid}', '${escapeHtml(vol.name)}')">
+                        <i class="fas fa-comment-dots"></i> মেসেজ
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ==================== LOAD CHAT ROOMS ====================
+        async function loadChatRooms() {
+            if (!currentUserId) return;
+            
+            try {
+                const snapshot = await database.ref('chatRooms').once('value');
+                const allRooms = snapshot.val();
+                
+                if (!allRooms) {
+                    allChatRooms = [];
+                    renderChatList();
+                    return;
+                }
+                
+                const roomsWithUser = [];
+                
+                for (const [roomId, room] of Object.entries(allRooms)) {
+                    let isParticipant = false;
+                    let otherUserId = null;
+                    
+                    if (room.participants) {
+                        for (const [uid] of Object.entries(room.participants)) {
+                            if (uid === currentUserId) {
+                                isParticipant = true;
+                            } else {
+                                otherUserId = uid;
+                            }
+                        }
+                    }
+                    
+                    if (isParticipant && otherUserId) {
+                        const userSnap = await database.ref('users/' + otherUserId).once('value');
+                        const userData = userSnap.val();
+                        const otherRole = userData?.role;
+                        const otherName = userData?.name || (otherRole === 'user' ? 'ইউজার' : 'ভলান্টিয়ার');
+                        
+                        if (room.deletedFor && room.deletedFor[currentUserId]) continue;
+
+                        roomsWithUser.push({
+                            id: roomId,
+                            otherUserId: otherUserId,
+                            otherName: otherName,
+                            otherRole: otherRole,
+                            otherDesignation: userData?.designation || (otherRole === 'admin' ? 'এডমিন' : otherRole === 'user' ? 'ইউজার' : 'ভলান্টিয়ার'),
+                            otherOnline: userData?.online || false,
+                            otherLastSeen: userData?.lastSeen || 0,
+                            otherAvatar: userData?.avatarUrl || '',
+                            lastMessage: room.lastMessage || '',
+                            lastMessageTime: room.lastMessageTime || 0,
+                            unreadCount: room.unreadCount?.[currentUserId] || 0
+                        });
+                    }
+                }
+                
+                roomsWithUser.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
+                allChatRooms = roomsWithUser;
+                
+                renderChatList();
+                updateBadges();
+                
+            } catch (error) {
+                console.error("Error loading chat rooms:", error);
+            }
+        }
+
+        function renderChatList() {
+            const container = document.getElementById('chatList');
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            
+            let filtered = allChatRooms.filter(room => {
+                return room.otherName?.toLowerCase().includes(searchTerm);
+            });
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="empty-placeholder">
+                    <i class="fas fa-comments"></i>
+                    <h4>কোনো চ্যাট নেই</h4>
+                    <p>ভলান্টিয়ার ট্যাব থেকে চ্যাট শুরু করুন</p>
+                </div>`;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(room => {
+                const timeAgo = formatTimeAgo(room.lastMessageTime);
+                const roleBadge = room.otherDesignation;
+                const hasUnread = room.unreadCount > 0;
+                
+                return `<div class="chat-item" data-room-id="${room.id}" onclick="openChat('${room.id}', '${room.otherUserId}', ${escapeJsAttr(room.otherName)})">
+                    <div class="chat-avatar">
+                        ${avatarHtml(room.otherAvatar, room.otherOnline, room.otherName)}
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-name-row">
+                            <div>
+                                <span class="chat-name">${escapeHtml(room.otherName)}</span>
+                                <span class="chat-role">${escapeHtml(roleBadge)}</span>
+                            </div>
+                            <span class="chat-time">${timeAgo}</span>
+                        </div>
+                        <div class="chat-last-msg" style="${hasUnread ? 'font-weight: 600; color: var(--fg);' : ''}">
+                            ${escapeHtml(room.lastMessage) || 'কোন মেসেজ নেই'}
+                        </div>
+                    </div>
+                    ${hasUnread ? `<div class="unread-badge">${room.unreadCount}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        // ==================== LONG-PRESS TO DELETE CHAT (Messenger style) ====================
+        const LONG_PRESS_MS = 500;
+        const LONG_PRESS_MOVE_TOLERANCE = 10;
+        let longPressTimer = null;
+        let longPressStartXY = null;
+        let longPressEl = null;
+        let contextMenuRoomId = null;
+
+        function setupChatLongPress() {
+            const list = document.getElementById('chatList');
+            const overlay = document.getElementById('chatContextOverlay');
+            const menu = document.getElementById('chatContextMenu');
+            const deleteBtn = document.getElementById('chatContextDeleteBtn');
+            if (!list || list.dataset.longPressBound) return;
+            list.dataset.longPressBound = 'true';
+
+            function startPress(e, el) {
+                const point = e.touches ? e.touches[0] : e;
+                longPressStartXY = { x: point.clientX, y: point.clientY };
+                longPressEl = el;
+                clearTimeout(longPressTimer);
+                longPressTimer = setTimeout(() => {
+                    if (navigator.vibrate) navigator.vibrate(15);
+                    el.classList.add('long-pressing');
+                    openChatContextMenu(el, longPressStartXY.x, longPressStartXY.y);
+                }, LONG_PRESS_MS);
+            }
+
+            function movePress(e) {
+                if (!longPressStartXY) return;
+                const point = e.touches ? e.touches[0] : e;
+                const dx = Math.abs(point.clientX - longPressStartXY.x);
+                const dy = Math.abs(point.clientY - longPressStartXY.y);
+                if (dx > LONG_PRESS_MOVE_TOLERANCE || dy > LONG_PRESS_MOVE_TOLERANCE) {
+                    cancelPress();
+                }
+            }
+
+            function cancelPress() {
+                clearTimeout(longPressTimer);
+                if (longPressEl) longPressEl.classList.remove('long-pressing');
+                longPressStartXY = null;
+            }
+
+            list.addEventListener('touchstart', (e) => {
+                const item = e.target.closest('.chat-item');
+                if (item) startPress(e, item);
+            }, { passive: true });
+            list.addEventListener('touchmove', movePress, { passive: true });
+            list.addEventListener('touchend', cancelPress);
+            list.addEventListener('touchcancel', cancelPress);
+
+            list.addEventListener('mousedown', (e) => {
+                const item = e.target.closest('.chat-item');
+                if (item) startPress(e, item);
+            });
+            list.addEventListener('mousemove', movePress);
+            list.addEventListener('mouseup', cancelPress);
+            list.addEventListener('mouseleave', cancelPress);
+            list.addEventListener('contextmenu', (e) => {
+                const item = e.target.closest('.chat-item');
+                if (item) {
+                    e.preventDefault();
+                    openChatContextMenu(item, e.clientX, e.clientY);
+                }
+            });
+
+            overlay.addEventListener('click', closeChatContextMenu);
+            deleteBtn.addEventListener('click', confirmDeleteChat);
+        }
+
+        function openChatContextMenu(itemEl, x, y) {
+            contextMenuRoomId = itemEl.dataset.roomId;
+            const overlay = document.getElementById('chatContextOverlay');
+            const menu = document.getElementById('chatContextMenu');
+            overlay.classList.add('active');
+            menu.classList.add('active');
+
+            // Position within viewport bounds
+            const menuWidth = 220;
+            const menuHeight = 60;
+            let left = Math.min(x, window.innerWidth - menuWidth - 16);
+            let top = Math.min(y, window.innerHeight - menuHeight - 16);
+            left = Math.max(16, left);
+            top = Math.max(16, top);
+            menu.style.left = left + 'px';
+            menu.style.top = top + 'px';
+        }
+
+        function closeChatContextMenu() {
+            document.getElementById('chatContextOverlay').classList.remove('active');
+            document.getElementById('chatContextMenu').classList.remove('active');
+            document.querySelectorAll('.chat-item.long-pressing').forEach(el => el.classList.remove('long-pressing'));
+            contextMenuRoomId = null;
+        }
+
+        async function confirmDeleteChat() {
+            const roomId = contextMenuRoomId;
+            closeChatContextMenu();
+            if (!roomId) return;
+            if (!confirm('এই চ্যাট হিস্ট্রি ডিলিট করতে চান? এটি শুধু আপনার তালিকা থেকে সরে যাবে।')) return;
+
+            try {
+                await database.ref(`chatRooms/${roomId}/deletedFor/${currentUserId}`).set(true);
+                allChatRooms = allChatRooms.filter(r => r.id !== roomId);
+                renderChatList();
+                updateBadges();
+                showToast('চ্যাট ডিলিট করা হয়েছে');
+            } catch (error) {
+                console.error('Delete chat error:', error);
+                showToast('চ্যাট ডিলিট করতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        // ==================== MESSAGE LONG-PRESS (Delete/Edit/Cancel) ====================
+        let msgLongPressTimer = null;
+        let msgLongPressStartXY = null;
+        let contextMenuMsgId = null;
+
+        function setupMessageLongPress() {
+            const area = document.getElementById('messagesArea');
+            const overlay = document.getElementById('msgContextOverlay');
+            const menu = document.getElementById('msgContextMenu');
+            const editBtn = document.getElementById('msgEditBtn');
+            const deleteForMeBtn = document.getElementById('msgDeleteForMeBtn');
+            const deleteForEveryoneBtn = document.getElementById('msgDeleteForEveryoneBtn');
+            const cancelBtn = document.getElementById('msgCancelBtn');
+            if (!area || area.dataset.longPressBound) return;
+            area.dataset.longPressBound = 'true';
+
+            function startPress(e, rowEl) {
+                const point = e.touches ? e.touches[0] : e;
+                msgLongPressStartXY = { x: point.clientX, y: point.clientY };
+                clearTimeout(msgLongPressTimer);
+                msgLongPressTimer = setTimeout(() => {
+                    if (navigator.vibrate) navigator.vibrate(15);
+                    openMessageContextMenu(rowEl, msgLongPressStartXY.x, msgLongPressStartXY.y);
+                }, LONG_PRESS_MS);
+            }
+
+            function movePress(e) {
+                if (!msgLongPressStartXY) return;
+                const point = e.touches ? e.touches[0] : e;
+                const dx = Math.abs(point.clientX - msgLongPressStartXY.x);
+                const dy = Math.abs(point.clientY - msgLongPressStartXY.y);
+                if (dx > LONG_PRESS_MOVE_TOLERANCE || dy > LONG_PRESS_MOVE_TOLERANCE) cancelPress();
+            }
+
+            function cancelPress() {
+                clearTimeout(msgLongPressTimer);
+                msgLongPressStartXY = null;
+            }
+
+            area.addEventListener('touchstart', (e) => {
+                const row = e.target.closest('.message-row[data-msg-id]');
+                if (row) startPress(e, row);
+            }, { passive: true });
+            area.addEventListener('touchmove', movePress, { passive: true });
+            area.addEventListener('touchend', cancelPress);
+            area.addEventListener('touchcancel', cancelPress);
+
+            area.addEventListener('mousedown', (e) => {
+                const row = e.target.closest('.message-row[data-msg-id]');
+                if (row) startPress(e, row);
+            });
+            area.addEventListener('mousemove', movePress);
+            area.addEventListener('mouseup', cancelPress);
+            area.addEventListener('mouseleave', cancelPress);
+            area.addEventListener('contextmenu', (e) => {
+                const row = e.target.closest('.message-row[data-msg-id]');
+                if (row) {
+                    e.preventDefault();
+                    openMessageContextMenu(row, e.clientX, e.clientY);
+                }
+            });
+
+            overlay.addEventListener('click', closeMessageContextMenu);
+            cancelBtn.addEventListener('click', closeMessageContextMenu);
+            editBtn.addEventListener('click', () => {
+                const id = contextMenuMsgId;
+                const msg = currentMessagesCache[id];
+                closeMessageContextMenu();
+                if (msg) editMessage(id, msg.text);
+            });
+            // NEW: "ডিলিট ফর মি" — যেকোনো মেসেজে (নিজের/অন্যের) কাজ করে, শুধু নিজের ভিউ থেকে সরায়
+            deleteForMeBtn.addEventListener('click', () => {
+                const id = contextMenuMsgId;
+                closeMessageContextMenu();
+                if (id) deleteMessage(id, 'me');
+            });
+            // NEW: "ডিলিট ফর এভরিওয়ান" — শুধু নিজের পাঠানো মেসেজে দেখানো হয়/কাজ করে
+            deleteForEveryoneBtn.addEventListener('click', () => {
+                const id = contextMenuMsgId;
+                closeMessageContextMenu();
+                if (id) deleteMessage(id, 'everyone');
+            });
+        }
+
+        function openMessageContextMenu(rowEl, x, y) {
+            const msgId = rowEl.dataset.msgId;
+            const msg = currentMessagesCache[msgId];
+            if (!msg) return;
+            contextMenuMsgId = msgId;
+
+            const isOwn = msg.senderId === currentUserId;
+            const isTextMsg = !msg.type || msg.type === 'text';
+            const alreadyDeletedForMe = !!(msg.deletedFor && msg.deletedFor[currentUserId]);
+            const editBtn = document.getElementById('msgEditBtn');
+            const deleteForMeBtn = document.getElementById('msgDeleteForMeBtn');
+            const deleteForEveryoneBtn = document.getElementById('msgDeleteForEveryoneBtn');
+            // এডিট শুধু নিজের টেক্সট মেসেজে (যেটা এখনো "সবার জন্য ডিলিট" হয়নি)
+            editBtn.style.display = (isOwn && isTextMsg && !msg.deleted) ? 'flex' : 'none';
+            // NEW: "ডিলিট ফর মি" যেকোনো (নিজের/অন্যের) মেসেজে দেখানো হয় — শুধু নিজের ভিউ থেকে সরায়
+            deleteForMeBtn.style.display = alreadyDeletedForMe ? 'none' : 'flex';
+            // NEW: "ডিলিট ফর এভরিওয়ান" শুধু নিজের পাঠানো, এখনো-ডিলিট-না-হওয়া মেসেজে দেখানো হয়
+            deleteForEveryoneBtn.style.display = (isOwn && !msg.deleted) ? 'flex' : 'none';
+
+            const overlay = document.getElementById('msgContextOverlay');
+            const menu = document.getElementById('msgContextMenu');
+            overlay.classList.add('active');
+            menu.classList.add('active');
+
+            const menuWidth = 210;
+            const menuHeight = 170;
+            let left = Math.min(x, window.innerWidth - menuWidth - 16);
+            let top = Math.min(y, window.innerHeight - menuHeight - 16);
+            left = Math.max(16, left);
+            top = Math.max(16, top);
+            menu.style.left = left + 'px';
+            menu.style.top = top + 'px';
+        }
+
+        function closeMessageContextMenu() {
+            document.getElementById('msgContextOverlay').classList.remove('active');
+            document.getElementById('msgContextMenu').classList.remove('active');
+            contextMenuMsgId = null;
+        }
+
+        // ==================== UPDATE BADGES ====================
+        function updateBadges() {
+            const totalUnread = allChatRooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
+            
+            const chatTabBadge = document.getElementById('chatTabBadge');
+            const bottomChatBadge = document.getElementById('bottomChatBadge');
+            
+            if (chatTabBadge) {
+                chatTabBadge.textContent = totalUnread;
+                chatTabBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none';
+            }
+            if (bottomChatBadge) {
+                bottomChatBadge.textContent = totalUnread;
+                bottomChatBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none';
+            }
+        }
+
+        // ==================== START CHAT ====================
+        async function startChatWithVolunteer(otherUserId, otherUserName) {
+            const roomId = [currentUserId, otherUserId].sort().join('_');
+            const roomSnapshot = await database.ref(`chatRooms/${roomId}`).once('value');
+            
+            if (!roomSnapshot.exists()) {
+                const roomData = {
+                    participants: {
+                        [currentUserId]: true,
+                        [otherUserId]: true
+                    },
+                    lastMessage: '',
+                    lastMessageTime: Date.now(),
+                    unreadCount: { [currentUserId]: 0, [otherUserId]: 0 },
+                    createdAt: Date.now()
+                };
+                await database.ref(`chatRooms/${roomId}`).set(roomData);
+            }
+            openChat(roomId, otherUserId, otherUserName);
+        }
+
+        async function startChatWithUser(userId, userName) {
+            const roomId = [currentUserId, userId].sort().join('_');
+            const roomSnapshot = await database.ref(`chatRooms/${roomId}`).once('value');
+            
+            if (!roomSnapshot.exists()) {
+                const roomData = {
+                    participants: {
+                        [currentUserId]: true,
+                        [userId]: true
+                    },
+                    lastMessage: '',
+                    lastMessageTime: Date.now(),
+                    unreadCount: { [currentUserId]: 0, [userId]: 0 },
+                    createdAt: Date.now()
+                };
+                await database.ref(`chatRooms/${roomId}`).set(roomData);
+            }
+            openChat(roomId, userId, userName);
+        }
+
+        // ==================== OPEN CHAT ====================
+        async function openChat(roomId, otherUserId, otherUserName) {
+            if (chatMessagesRef) chatMessagesRef.off();
+            
+            currentChatRoom = roomId;
+            currentChatUser = { uid: otherUserId, name: otherUserName };
+            
+            const userSnapshot = await database.ref('users/' + otherUserId).once('value');
+            const userData = userSnapshot.val();
+            const otherRole = userData?.role;
+            const otherDesignation = userData?.designation || (otherRole === 'admin' ? 'এডমিন' : otherRole === 'user' ? 'ইউজার' : 'ভলান্টিয়ার');
+
+            // NEW FIX #6: নামের লাইনে আর ডেজিগনেশন জোড়া লাগানো হয় না (এতে বড় নাম আরও কম দেখা যেত) —
+            // নাম একাই বসে, পুরো নাম+ডেজিগনেশন টুলটিপ (title) হিসেবে থাকে, ডেজিগনেশন আলাদা ছোট ব্যাজে দেখানো হয়
+            const fullDisplayName = userData?.name || otherUserName;
+            const convNameEl = document.getElementById('convName');
+            convNameEl.textContent = fullDisplayName;
+            convNameEl.title = `${fullDisplayName} (${otherDesignation})`;
+            const convDesigEl = document.getElementById('convDesignation');
+            if (convDesigEl) convDesigEl.textContent = otherDesignation;
+
+            await database.ref(`chatRooms/${roomId}/unreadCount/${currentUserId}`).set(0);
+            updateBadges();
+
+            // Live listener for other user's photo, online status & last seen
+            if (otherUserStatusRef) otherUserStatusRef.off();
+            otherUserStatusRef = database.ref('users/' + otherUserId);
+            otherUserStatusRef.on('value', (snap) => {
+                const u = snap.val() || {};
+                const isOnline = u.online || false;
+                const avatarEl = document.getElementById('convAvatar');
+                if (avatarEl) {
+                    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || otherUserName || 'User')}&background=16a34a&color=fff`;
+                    const src = (u.avatarUrl && u.avatarUrl.startsWith('http')) ? u.avatarUrl : fallback;
+                    avatarEl.innerHTML = `<img src="${escapeHtml(src)}" alt="profile" onerror="this.src='${fallback}'">`;
+                }
+                const statusEl = document.getElementById('convStatus');
+                if (statusEl) {
+                    statusEl.innerHTML = isOnline
+                        ? '<i class="fas fa-circle"></i> অনলাইন'
+                        : `<i class="far fa-clock"></i> ${formatLastSeen(u.lastSeen)}`;
+                    statusEl.className = `conv-user-status ${isOnline ? 'online' : ''}`;
+                }
+            });
+            
+            chatMessagesRef = database.ref(`messages/${roomId}`).orderByChild('timestamp');
+            chatMessagesRef.on('value', (snapshot) => {
+                const messages = [];
+                snapshot.forEach(child => {
+                    messages.push({ id: child.key, ...child.val() });
+                });
+                messages.sort((a, b) => a.timestamp - b.timestamp);
+                renderMessages(messages);
+            });
+            
+            // Typing indicator listener (আগের chat-room-এর listener থাকলে আগে detach করা হচ্ছে,
+            // নাহলে chat বার বার open করলে duplicate listener জমে থাকবে)
+            if (typingListenerRef) typingListenerRef.off();
+            typingListenerRef = database.ref(`typing/${roomId}/${otherUserId}`);
+            typingListenerRef.on('value', (snapshot) => {
+                const isTyping = snapshot.val();
+                const indicator = document.getElementById('typingIndicator');
+                if (isTyping) {
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            });
+            
+            document.getElementById('conversationPage').classList.add('active');
+            document.getElementById('messageInput').focus();
+        }
+
+        // ==================== RENDER MESSAGES ====================
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesArea');
+            // NEW: "ডিলিট ফর মি" করা মেসেজ নিজের ভিউ থেকে বাদ দেওয়া হয় (বাকিদের কাছে অক্ষত থাকে)
+            messages = (messages || []).filter(m => !(m.deletedFor && m.deletedFor[currentUserId]));
+            if (!messages || messages.length === 0) {
+                container.innerHTML = `<div class="empty-placeholder">
+                    <i class="fas fa-comment-dots"></i>
+                    <h4>কোনো মেসেজ নেই</h4>
+                    <p>এখানে আপনার মেসেজ লিখুন</p>
+                </div>`;
+                return;
+            }
+            
+            // Ownership/edit/delete validation ও message long-press menu-র জন্য cache রাখা হচ্ছে
+            currentMessagesCache = {};
+            messages.forEach(m => { currentMessagesCache[m.id] = m; });
+
+            let html = '';
+            let lastDate = '';
+            messages.forEach(msg => {
+                const msgDate = formatDate(msg.timestamp);
+                if (msgDate !== lastDate) {
+                    html += `<div class="date-divider"><span>${msgDate}</span></div>`;
+                    lastDate = msgDate;
+                }
+
+                // ---- Call log messages render as a centered divider, not a bubble ----
+                if (msg.type === 'call_log') {
+                    const icon = msg.callType === 'video' ? 'fa-video' : 'fa-phone';
+                    let label = '';
+                    let isMissed = false;
+                    if (msg.outcome === 'missed') { label = 'মিসড কল'; isMissed = (msg.senderId !== currentUserId); }
+                    else if (msg.outcome === 'declined') { label = 'প্রত্যাখ্যাত কল'; isMissed = true; }
+                    else if (msg.outcome === 'cancelled') { label = 'বাতিল করা কল'; }
+                    else { label = `কল · ${formatCallDuration(msg.duration)}`; }
+                    html += `<div class="date-divider call-log-divider${isMissed ? ' missed' : ''}">
+                        <span><i class="fas ${icon}"></i> ${label} · ${formatTime(msg.timestamp)}</span>
+                    </div>`;
+                    return;
+                }
+
+                const isSent = msg.senderId === currentUserId;
+                const isEdited = msg.edited === true;
+                const isMedia = msg.type === 'image' || msg.type === 'audio';
+                
+                // Determine message status
+                let statusHtml = '';
+                if (isSent) {
+                    if (msg.read) {
+                        statusHtml = '<span class="message-status read"><i class="fas fa-check-double"></i></span>';
+                    } else if (msg.delivered) {
+                        statusHtml = '<span class="message-status delivered"><i class="fas fa-check-double"></i></span>';
+                    } else {
+                        statusHtml = '<span class="message-status sent"><i class="fas fa-check"></i></span>';
+                    }
+                }
+
+                let bodyHtml = '';
+                if (msg.type === 'image') {
+                    bodyHtml = `<img src="${escapeHtml(msg.url)}" class="msg-image" onclick="openImageViewer(${escapeJsAttr(msg.url)})" loading="lazy">`;
+                } else if (msg.type === 'audio') {
+                    const audioId = 'voiceAudio_' + msg.id;
+                    bodyHtml = `<div class="voice-msg">
+                        <audio id="${audioId}" preload="metadata" src="${escapeHtml(msg.url)}"></audio>
+                        <button type="button" class="voice-msg-play-btn" onclick="toggleVoiceMsgPlayback('${audioId}')" title="প্লে/পজ">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <div class="voice-msg-track" onclick="seekVoiceMsg(event, '${audioId}')">
+                            <div class="voice-msg-progress" id="progress_${audioId}"></div>
+                        </div>
+                        <span class="voice-msg-time" id="time_${audioId}">0:00</span>
+                    </div>`;
+                } else {
+                    bodyHtml = `${escapeHtml(msg.text)}${isEdited ? '<span class="edited-badge">(এডিটেড)</span>' : ''}`;
+                }
+
+                // ⚠️ Edit/Delete action button শুধু নিজের (sent) মেসেজেই দেখানো হয় —
+                // অন্য ব্যবহারকারীর মেসেজে এই বাটন থাকবেই না (rule: অন্যের মেসেজ ডিলিট করা যাবে না)।
+                // FIX: মেসেজ ইতিমধ্যে "সবার জন্য ডিলিট" হয়ে গেলে (msg.deleted === true) হোভার
+                // Edit/Delete বাটন আর দেখানো হবে না — আগে এগুলো ডিলিট হওয়া প্লেসহোল্ডার টেক্সটের
+                // উপরও থেকে যেত এবং ক্লিক করলে ভুলভাবে আবার এডিট/ডিলিট চালানোর চেষ্টা করতো।
+                const actionsHtml = (!isSent || msg.deleted)
+                    ? ''
+                    : (isMedia
+                        ? `<div class="message-actions"><button class="delete-btn" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash-alt"></i></button></div>`
+                        : `<div class="message-actions">
+                            <button class="edit-btn" onclick="editMessage('${msg.id}', ${escapeJsAttr(msg.text)})"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" onclick="deleteMessage('${msg.id}')"><i class="fas fa-trash-alt"></i></button>
+                        </div>`);
+                
+                html += `<div class="message-row ${isSent ? 'sent' : 'received'}" data-msg-id="${msg.id}" data-sender-id="${escapeHtml(msg.senderId || '')}">
+                    <div class="message-bubble">
+                        ${bodyHtml}
+                        ${actionsHtml}
+                        <div class="message-footer">
+                            <span class="message-time">${formatTime(msg.timestamp)}</span>
+                            ${statusHtml}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+            initVoiceMessageEvents(container);
+            setTimeout(() => {
+                if (container) container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+
+        // ==================== VOICE MESSAGE PLAYER (custom UI, native <audio> playback) ====================
+        function toggleVoiceMsgPlayback(audioId) {
+            const audioEl = document.getElementById(audioId);
+            if (!audioEl) return;
+
+            if (currentlyPlayingAudioId && currentlyPlayingAudioId !== audioId) {
+                const prevAudio = document.getElementById(currentlyPlayingAudioId);
+                if (prevAudio) prevAudio.pause();
+            }
+
+            if (audioEl.paused) {
+                audioEl.play().catch(err => console.error('Audio play error:', err));
+                currentlyPlayingAudioId = audioId;
+            } else {
+                audioEl.pause();
+            }
+        }
+
+        function seekVoiceMsg(event, audioId) {
+            const audioEl = document.getElementById(audioId);
+            if (!audioEl || !audioEl.duration || !isFinite(audioEl.duration)) return;
+            const track = event.currentTarget;
+            const rect = track.getBoundingClientRect();
+            const ratio = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+            audioEl.currentTime = ratio * audioEl.duration;
+        }
+
+        function initVoiceMessageEvents(container) {
+            container.querySelectorAll('.voice-msg audio').forEach(audioEl => {
+                const audioId = audioEl.id;
+                const playIcon = audioEl.parentElement.querySelector('.voice-msg-play-btn i');
+                const progressEl = document.getElementById('progress_' + audioId);
+                const timeEl = document.getElementById('time_' + audioId);
+
+                audioEl.addEventListener('play', () => {
+                    if (playIcon) { playIcon.classList.remove('fa-play'); playIcon.classList.add('fa-pause'); }
+                });
+                audioEl.addEventListener('pause', () => {
+                    if (playIcon) { playIcon.classList.remove('fa-pause'); playIcon.classList.add('fa-play'); }
+                });
+                audioEl.addEventListener('ended', () => {
+                    if (playIcon) { playIcon.classList.remove('fa-pause'); playIcon.classList.add('fa-play'); }
+                    if (progressEl) progressEl.style.width = '0%';
+                    if (currentlyPlayingAudioId === audioId) currentlyPlayingAudioId = null;
+                });
+                audioEl.addEventListener('timeupdate', () => {
+                    if (!audioEl.duration || !isFinite(audioEl.duration)) return;
+                    if (progressEl) progressEl.style.width = `${(audioEl.currentTime / audioEl.duration) * 100}%`;
+                    if (timeEl) timeEl.textContent = formatCallDuration(Math.round(audioEl.currentTime));
+                });
+                audioEl.addEventListener('loadedmetadata', () => {
+                    if (timeEl && audioEl.duration && isFinite(audioEl.duration)) {
+                        timeEl.textContent = formatCallDuration(Math.round(audioEl.duration));
+                    }
+                });
+            });
+        }
+
+        // ==================== SEND MESSAGE ====================
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !currentChatRoom) return;
+            
+            const message = {
+                senderId: currentUserId,
+                senderName: currentUserName,
+                text: text,
+                timestamp: Date.now(),
+                delivered: false,
+                read: false,
+                edited: false
+            };
+            
+            try {
+                await database.ref(`messages/${currentChatRoom}`).push(message);
+                await database.ref(`chatRooms/${currentChatRoom}`).update({
+                    lastMessage: text,
+                    lastMessageTime: Date.now(),
+                    [`unreadCount/${currentChatUser.uid}`]: firebase.database.ServerValue.increment(1),
+                    [`deletedFor/${currentChatUser.uid}`]: false
+                });
+                
+                // Mark as delivered after 1 second
+                setTimeout(async () => {
+                    const lastMsgSnapshot = await database.ref(`messages/${currentChatRoom}`).limitToLast(1).once('value');
+                    lastMsgSnapshot.forEach(child => {
+                        database.ref(`messages/${currentChatRoom}/${child.key}/delivered`).set(true);
+                    });
+                }, 1000);
+                
+                input.value = '';
+                loadChatRooms();
+                
+                // Stop typing indicator
+                database.ref(`typing/${currentChatRoom}/${currentUserId}`).set(false);
+            } catch (error) {
+                console.error("Send error:", error);
+                showToast('মেসেজ পাঠাতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        // ==================== SEND MEDIA MESSAGE (Image / Audio) ====================
+        async function sendMediaMessage(type, url) {
+            if (!currentChatRoom || !currentChatUser) return;
+
+            const previewText = type === 'image' ? '📷 ছবি' : '🎤 ভয়েস মেসেজ';
+            const message = {
+                senderId: currentUserId,
+                senderName: currentUserName,
+                type: type,
+                url: url,
+                text: previewText,
+                timestamp: Date.now(),
+                delivered: false,
+                read: false,
+                edited: false
+            };
+
+            try {
+                await database.ref(`messages/${currentChatRoom}`).push(message);
+                await database.ref(`chatRooms/${currentChatRoom}`).update({
+                    lastMessage: previewText,
+                    lastMessageTime: Date.now(),
+                    [`unreadCount/${currentChatUser.uid}`]: firebase.database.ServerValue.increment(1),
+                    [`deletedFor/${currentChatUser.uid}`]: false
+                });
+
+                setTimeout(async () => {
+                    const lastMsgSnapshot = await database.ref(`messages/${currentChatRoom}`).limitToLast(1).once('value');
+                    lastMsgSnapshot.forEach(child => {
+                        database.ref(`messages/${currentChatRoom}/${child.key}/delivered`).set(true);
+                    });
+                }, 1000);
+
+                loadChatRooms();
+            } catch (error) {
+                console.error('Send media error:', error);
+                showToast('মেসেজ পাঠাতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        function formatCallDuration(seconds) {
+            seconds = seconds || 0;
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        // ==================== EDIT MESSAGE ====================
+        async function editMessage(messageId, oldText) {
+            // Ownership validation: শুধুমাত্র নিজের মেসেজ এডিট করা যাবে
+            const cachedMsg = currentMessagesCache[messageId];
+            if (!cachedMsg || cachedMsg.senderId !== currentUserId) {
+                showToast('আপনি শুধুমাত্র নিজের মেসেজ এডিট করতে পারবেন', 'error');
+                return;
+            }
+
+            const newText = prompt('মেসেজ এডিট করুন:', oldText);
+            if (!newText || newText === oldText) return;
+            
+            try {
+                await database.ref(`messages/${currentChatRoom}/${messageId}`).update({
+                    text: newText,
+                    edited: true,
+                    editedAt: Date.now()
+                });
+            } catch (error) {
+                console.error("Edit error:", error);
+                showToast('মেসেজ এডিট করতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        // ==================== DELETE MESSAGE (NEW: scope 'me' বা 'everyone') ====================
+        // scope 'everyone' (ডিফল্ট, hover-এর কুইক ডিলিট বাটনের বিদ্যমান আচরণ অপরিবর্তিত) —
+        // শুধু নিজের মেসেজে চলে, সবার জন্য মুছে যায়।
+        // scope 'me' — নিজের/অন্যের যেকোনো মেসেজে চলে, শুধু নিজের ভিউ থেকে সরিয়ে দেয় (deletedFor ম্যাপ ব্যবহার করে)
+        async function deleteMessage(messageId, scope) {
+            scope = scope || 'everyone';
+            const cachedMsg = currentMessagesCache[messageId];
+            if (!cachedMsg) return;
+
+            if (scope === 'everyone') {
+                if (cachedMsg.senderId !== currentUserId) {
+                    showToast('আপনি শুধুমাত্র নিজের মেসেজ সবার জন্য ডিলিট করতে পারবেন', 'error');
+                    return;
+                }
+                if (!confirm('মেসেজটি সবার জন্য ডিলিট করতে চান?')) return;
+                try {
+                    await database.ref(`messages/${currentChatRoom}/${messageId}`).update({
+                        text: 'এই মেসেজ ডিলিট করা হয়েছে',
+                        deleted: true
+                    });
+                } catch (error) {
+                    console.error("Delete error:", error);
+                    showToast('মেসেজ ডিলিট করতে সমস্যা হয়েছে', 'error');
+                }
+            } else {
+                if (!confirm('মেসেজটি শুধু আপনার জন্য ডিলিট করতে চান?')) return;
+                try {
+                    await database.ref(`messages/${currentChatRoom}/${messageId}/deletedFor/${currentUserId}`).set(true);
+                } catch (error) {
+                    console.error("Delete-for-me error:", error);
+                    showToast('মেসেজ ডিলিট করতে সমস্যা হয়েছে', 'error');
+                }
+            }
+        }
+
+        // ==================== TYPING INDICATOR ====================
+        function handleTyping() {
+            if (!currentChatRoom) return;
+            
+            database.ref(`typing/${currentChatRoom}/${currentUserId}`).set(true);
+            
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                database.ref(`typing/${currentChatRoom}/${currentUserId}`).set(false);
+            }, 1000);
+        }
+
+        // ==================== CLOUDINARY UPLOAD ====================
+        async function uploadToCloudinary(blobOrFile) {
+            const formData = new FormData();
+            formData.append('file', blobOrFile);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+            const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error('Cloudinary upload failed: ' + errText);
+            }
+
+            const data = await response.json();
+            return data.secure_url;
+        }
+
+        // ==================== IMAGE SHARE ====================
+        function compressImage(file, maxWidth = 1280, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('ফাইল পড়তে সমস্যা হয়েছে'));
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('ছবি লোড করতে সমস্যা হয়েছে'));
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxWidth) {
+                            height = Math.round(height * (maxWidth / width));
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => {
+                            if (blob) resolve(blob);
+                            else reject(new Error('ছবি প্রসেস করতে সমস্যা হয়েছে'));
+                        }, 'image/jpeg', quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleImageSelected(event) {
+            const file = event.target.files[0];
+            event.target.value = ''; // একই ছবি আবার সিলেক্ট করা যায় সেজন্য রিসেট
+            if (!file || !currentChatRoom) return;
+
+            if (!file.type.startsWith('image/')) {
+                showToast('শুধু ছবি ফাইল নির্বাচন করুন', 'error');
+                return;
+            }
+
+            showToast('ছবি পাঠানো হচ্ছে...');
+            try {
+                const compressedBlob = await compressImage(file);
+                const url = await uploadToCloudinary(compressedBlob);
+                await sendMediaMessage('image', url);
+            } catch (error) {
+                console.error('Image send error:', error);
+                showToast('ছবি পাঠাতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        function openImageViewer(url) {
+            document.getElementById('imageViewerImg').src = url;
+            document.getElementById('imageViewer').classList.add('active');
+            // NEW: ডাউনলোড বাটন — Cloudinary URL হলে fl_attachment ফ্ল্যাগ যোগ করে ফোর্স-ডাউনলোড করানো হয়
+            const downloadBtn = document.getElementById('imageDownloadBtn');
+            if (downloadBtn) {
+                const downloadUrl = url.includes('/upload/') ? url.replace('/upload/', '/upload/fl_attachment/') : url;
+                // FIX: আগে শুধু একটা <a> লিংক ক্লিক করানো হতো — ডাউনলোড আসলে সফল হলো নাকি ব্যর্থ
+                // (নেটওয়ার্ক এরর, ভাঙা URL, CORS ইত্যাদি) তার কোনো ফিডব্যাক (টোস্ট) দেখানো হতো না।
+                // এখন fetch দিয়ে আসল ফাইল আনা হচ্ছে, blob বানিয়ে ডাউনলোড করানো হচ্ছে, এবং
+                // সফল/ব্যর্থ দুই ক্ষেত্রেই showToast() দিয়ে জানানো হচ্ছে।
+                downloadBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    if (downloadBtn.dataset.downloading === 'true') return;
+                    downloadBtn.dataset.downloading = 'true';
+                    const originalIcon = downloadBtn.innerHTML;
+                    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    showToast('ছবি ডাউনলোড হচ্ছে...');
+                    try {
+                        const response = await fetch(downloadUrl);
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = 'image_' + Date.now() + '.jpg';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+                        showToast('ছবি ডাউনলোড সফল হয়েছে ✅', 'success');
+                    } catch (error) {
+                        console.error('Image download error:', error);
+                        // Fallback: fetch/blob কাজ না করলে (যেমন CORS ব্লক) সরাসরি লিংক ওপেন করে দেখানো হচ্ছে
+                        try {
+                            const a = document.createElement('a');
+                            a.href = downloadUrl;
+                            a.download = 'image.jpg';
+                            a.target = '_blank';
+                            a.rel = 'noopener';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            showToast('ডাউনলোড ব্রাউজারে খোলা হয়েছে', 'info');
+                        } catch (fallbackError) {
+                            console.error('Image download fallback error:', fallbackError);
+                            showToast('ছবি ডাউনলোড ব্যর্থ হয়েছে ❌', 'error');
+                        }
+                    } finally {
+                        downloadBtn.dataset.downloading = 'false';
+                        downloadBtn.innerHTML = originalIcon;
+                    }
+                };
+            }
+        }
+
+        function closeImageViewer() {
+            document.getElementById('imageViewer').classList.remove('active');
+            document.getElementById('imageViewerImg').src = '';
+        }
+
+        // ==================== VOICE MESSAGE ====================
+        function toggleVoiceRecording() {
+            if (!currentChatRoom) return;
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopVoiceRecording(true);
+            } else {
+                startVoiceRecording();
+            }
+        }
+
+        async function startVoiceRecording() {
+            if (!currentChatRoom) return;
+            try {
+                recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (error) {
+                console.error('Mic permission error:', error);
+                showToast('মাইক পারমিশন প্রয়োজন', 'error');
+                return;
+            }
+
+            isRecordingCancelled = false;
+            recordedChunks = [];
+
+            let mimeType = 'audio/webm';
+            if (!(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mimeType))) {
+                mimeType = (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) ? 'audio/mp4' : '';
+            }
+
+            try {
+                mediaRecorder = mimeType ? new MediaRecorder(recordingStream, { mimeType }) : new MediaRecorder(recordingStream);
+            } catch (error) {
+                console.error('MediaRecorder init error:', error);
+                showToast('ভয়েস রেকর্ডিং সাপোর্ট নেই', 'error');
+                recordingStream.getTracks().forEach(t => t.stop());
+                return;
+            }
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+            };
+            mediaRecorder.onstop = onVoiceRecordingStop;
+
+            mediaRecorder.start();
+            recordingStartTs = Date.now();
+            showRecordingBar();
+            recordingTimerInterval = setInterval(updateRecordingTimer, 200);
+        }
+
+        function stopVoiceRecording(send) {
+            isRecordingCancelled = !send;
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+            if (recordingStream) {
+                recordingStream.getTracks().forEach(t => t.stop());
+                recordingStream = null;
+            }
+            clearInterval(recordingTimerInterval);
+            hideRecordingBar();
+        }
+
+        async function onVoiceRecordingStop() {
+            if (isRecordingCancelled) {
+                recordedChunks = [];
+                return;
+            }
+            const durationSec = Math.round((Date.now() - recordingStartTs) / 1000);
+            if (durationSec < 1) {
+                showToast('রেকর্ডিং অনেক ছোট, আবার চেষ্টা করুন', 'error');
+                recordedChunks = [];
+                return;
+            }
+            const blob = new Blob(recordedChunks, { type: (mediaRecorder && mediaRecorder.mimeType) || 'audio/webm' });
+            recordedChunks = [];
+
+            showToast('ভয়েস মেসেজ পাঠানো হচ্ছে...');
+            try {
+                const url = await uploadToCloudinary(blob);
+                await sendMediaMessage('audio', url);
+            } catch (error) {
+                console.error('Voice send error:', error);
+                showToast('ভয়েস মেসেজ পাঠাতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        function showRecordingBar() {
+            document.getElementById('inputWrapper').style.display = 'none';
+            document.getElementById('recordingBar').classList.add('active');
+            document.getElementById('micBtn').classList.add('recording-active');
+            updateRecordingTimer();
+        }
+
+        function hideRecordingBar() {
+            document.getElementById('inputWrapper').style.display = 'flex';
+            document.getElementById('recordingBar').classList.remove('active');
+            document.getElementById('micBtn').classList.remove('recording-active');
+        }
+
+        function updateRecordingTimer() {
+            if (!recordingStartTs) return;
+            const elapsed = Math.floor((Date.now() - recordingStartTs) / 1000);
+            const m = Math.floor(elapsed / 60);
+            const s = elapsed % 60;
+            const el = document.getElementById('recordingTimer');
+            if (el) el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        // ==================== CALLS (Jitsi Meet) ====================
+        // ==================== NEW: WEBRTC CALLING (Firebase RTDB সিগন্যালিং, নিজস্ব নিয়ন্ত্রণে) ====================
+        function getSignalRef(roomId) {
+            return database.ref(`chatRooms/${roomId}/activeCall/signal`);
+        }
+
+        // caller ও callee দুজনেই নিজের role অনুযায়ী offer/answer/candidates আলাদা পাথে রাখে,
+        // যাতে একে অপরের ডেটা ওভাররাইট না করে
+        async function startWebRTCCall(roomId, callInfo, isCaller) {
+            currentCallRoomId = roomId;
+            currentCallInfo = callInfo;
+            pendingRemoteCandidates = [];
+            isSpeakerOn = true; // NEW: প্রতিটা কল শুরুতে স্পিকার বাটন ডিফল্ট (লাউড) অবস্থায় রিসেট
+
+            const isVideo = callInfo.type === 'video';
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
+            } catch (err) {
+                console.error('getUserMedia error:', err);
+                showToast('ক্যামেরা/মাইক্রোফোন অ্যাক্সেস পাওয়া যায়নি', 'error');
+                await endLiveCall('failed');
+                return;
+            }
+
+            peerConnection = new RTCPeerConnection(RTC_CONFIG);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            remoteStream = new MediaStream();
+            const remoteVideoEl = document.getElementById('remoteVideoEl');
+            if (remoteVideoEl) remoteVideoEl.srcObject = remoteStream;
+            // FIX: অপর পাশের ভিডিও/অডিও ট্র্যাক আসার সময় শুধু remoteStream-এ track যোগ করলেই
+            // অনেক মোবাইল ব্রাউজারে (বিশেষ করে Safari/iOS ও কিছু WebView) ভিডিও এলিমেন্ট রিফ্রেশ হয় না,
+            // ফলে শুধু নিজের ভিডিও (PIP) দেখা যায় কিন্তু অপরপক্ষের ভিডিও দেখা যায় না।
+            // তাই প্রতিবার নতুন ট্র্যাক এলে srcObject আবার সেট করে দিচ্ছি এবং play() explicitly কল করছি।
+            peerConnection.ontrack = (event) => {
+                event.streams[0].getTracks().forEach(track => {
+                    if (!remoteStream.getTracks().some(t => t.id === track.id)) {
+                        remoteStream.addTrack(track);
+                    }
+                });
+                if (remoteVideoEl) {
+                    remoteVideoEl.srcObject = remoteStream;
+                    const playPromise = remoteVideoEl.play();
+                    if (playPromise && playPromise.catch) {
+                        playPromise.catch(err => console.warn('remote video play() blocked:', err));
+                    }
+                }
+            };
+
+            const myRole = isCaller ? 'caller' : 'callee';
+            const otherRole = isCaller ? 'callee' : 'caller';
+            const signalRef = getSignalRef(roomId);
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    signalRef.child(`candidates/${myRole}`).push(event.candidate.toJSON());
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                if (peerConnection && (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed')) {
+                    endLiveCall('completed');
+                }
+            };
+
+            showLiveCallScreen(callInfo, isVideo);
+
+            // দূরের পক্ষের SDP (caller-এর জন্য answer, callee-এর জন্য offer) শোনা
+            const remoteSdpRef = signalRef.child(isCaller ? 'answer' : 'offer');
+            remoteSdpRef.on('value', async (snap) => {
+                const data = snap.val();
+                if (!data || !peerConnection || peerConnection.currentRemoteDescription) return;
+                try {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data));
+                    flushPendingCandidates();
+                    if (!isCaller) {
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+                        await signalRef.child('answer').set({ type: answer.type, sdp: answer.sdp });
+                    }
+                } catch (err) {
+                    console.error('setRemoteDescription error:', err);
+                }
+            });
+            activeSignalRefs.push(remoteSdpRef);
+
+            // দূরের পক্ষের ICE candidate গুলো শোনা
+            const remoteCandidatesRef = signalRef.child(`candidates/${otherRole}`);
+            remoteCandidatesRef.on('child_added', (snap) => {
+                const candidate = snap.val();
+                if (!candidate || !peerConnection) return;
+                if (peerConnection.currentRemoteDescription) {
+                    peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.error('addIceCandidate error:', err));
+                } else {
+                    pendingRemoteCandidates.push(candidate);
+                }
+            });
+            activeSignalRefs.push(remoteCandidatesRef);
+
+            // অন্য পক্ষ কল কেটে দিলে (activeCall মুছে গেলে) নিজের পাশেও কল বন্ধ হয়ে যাবে
+            activeCallWatchRef = database.ref(`chatRooms/${roomId}/activeCall`);
+            activeCallWatchRef.on('value', (snap) => {
+                if (!snap.exists() && isCallActive) endLiveCall('completed');
+            });
+
+            if (isCaller) {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                await signalRef.child('offer').set({ type: offer.type, sdp: offer.sdp });
+            }
+
+            callStartTs = Date.now();
+            startCallTimer();
+        }
+
+        function flushPendingCandidates() {
+            if (!peerConnection) return;
+            while (pendingRemoteCandidates.length) {
+                const c = pendingRemoteCandidates.shift();
+                peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(err => console.error('addIceCandidate (flush) error:', err));
+            }
+        }
+
+        function showLiveCallScreen(callInfo, isVideo) {
+            document.getElementById('outgoingCallOverlay').classList.remove('active');
+            document.getElementById('incomingCallOverlay').classList.remove('active');
+            document.getElementById('callBubble').classList.remove('active');
+            stopSound(dialingSound);
+            stopSound(ringtoneSound);
+            isCallMinimized = false;
+
+            document.getElementById('liveCallName').textContent = (currentChatUser && currentChatUser.name) || callInfo.fromName || 'ব্যবহারকারী';
+            document.getElementById('liveCallTimer').textContent = '00:00';
+            document.getElementById('remoteVideoEl').style.display = isVideo ? 'block' : 'none';
+            document.getElementById('localVideoEl').style.display = isVideo ? 'block' : 'none';
+            document.getElementById('liveCallAudioAvatar').style.display = isVideo ? 'none' : 'flex';
+
+            // NEW: অডিও কলে যার সাথে কথা হচ্ছে তার আসল প্রোফাইল ফটো দেখানো (আগে শুধু জেনেরিক আইকন দেখাতো)।
+            // কনভারসেশন হেডারে ইতিমধ্যে লোড হওয়া ছবিটাই পুনরায় ব্যবহার করছি।
+            if (!isVideo) {
+                const audioAvatarEl = document.getElementById('liveCallAudioAvatar');
+                const convAvatarImg = document.querySelector('#convAvatar img');
+                if (audioAvatarEl) {
+                    if (convAvatarImg && convAvatarImg.src) {
+                        audioAvatarEl.innerHTML = `<div class="live-call-audio-avatar-photo"><img src="${convAvatarImg.src}" alt="profile"></div>`;
+                    } else {
+                        audioAvatarEl.innerHTML = '<i class="fas fa-user-circle"></i>';
+                    }
+                }
+            }
+
+            const localVideoEl = document.getElementById('localVideoEl');
+            if (isVideo && localStream) {
+                localVideoEl.srcObject = localStream;
+                const localPlayPromise = localVideoEl.play();
+                if (localPlayPromise && localPlayPromise.catch) {
+                    localPlayPromise.catch(err => console.warn('local video play() blocked:', err));
+                }
+            }
+
+            document.getElementById('toggleCamBtn').style.display = isVideo ? 'flex' : 'none';
+            document.getElementById('toggleMicBtn').classList.remove('off');
+            document.getElementById('toggleCamBtn').classList.remove('off');
+
+            // NEW: স্পিকার বাটন প্রতি কলের শুরুতে "লাউড" আইকনে রিসেট
+            const speakerBtn = document.getElementById('toggleSpeakerBtn');
+            if (speakerBtn) {
+                speakerBtn.classList.remove('off');
+                speakerBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+
+            document.getElementById('liveCallScreen').classList.add('active');
+            isCallActive = true;
+            trapBackForCall();
+        }
+
+        function startCallTimer() {
+            stopCallTimer();
+            callDurationInterval = setInterval(() => {
+                if (!callStartTs) return;
+                const secs = Math.floor((Date.now() - callStartTs) / 1000);
+                const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+                const ss = String(secs % 60).padStart(2, '0');
+                const timerEl = document.getElementById('liveCallTimer');
+                if (timerEl) timerEl.textContent = `${mm}:${ss}`;
+            }, 1000);
+        }
+
+        function stopCallTimer() {
+            if (callDurationInterval) {
+                clearInterval(callDurationInterval);
+                callDurationInterval = null;
+            }
+        }
+
+        function toggleMic() {
+            if (!localStream) return;
+            const track = localStream.getAudioTracks()[0];
+            if (!track) return;
+            track.enabled = !track.enabled;
+            document.getElementById('toggleMicBtn').classList.toggle('off', !track.enabled);
+        }
+
+        function toggleCam() {
+            if (!localStream) return;
+            const track = localStream.getVideoTracks()[0];
+            if (!track) return;
+            track.enabled = !track.enabled;
+            document.getElementById('toggleCamBtn').classList.toggle('off', !track.enabled);
+        }
+
+        // NEW: লাউডস্পিকার অন/অফ বাটন — অডিও যেই <video> এলিমেন্ট দিয়ে বাজছে (remoteVideoEl) তার
+        // অডিও আউটপুট ডিভাইস setSinkId() দিয়ে পাল্টানোর চেষ্টা করে (স্পিকার <-> ইয়ারপিস/ডিফল্ট আউটপুট)।
+        // মনে রাখতে হবে: setSinkId() সব ব্রাউজারে (বিশেষ করে iOS Safari-তে) সাপোর্ট করে না —
+        // সেক্ষেত্রে ব্যবহারকারীকে টোস্ট মেসেজ দিয়ে জানানো হয়, অ্যাপ ক্র্যাশ করে না।
+        async function toggleSpeaker() {
+            const remoteVideoEl = document.getElementById('remoteVideoEl');
+            const speakerBtn = document.getElementById('toggleSpeakerBtn');
+            if (!remoteVideoEl || typeof remoteVideoEl.setSinkId !== 'function') {
+                showToast('এই ব্রাউজারে স্পিকার পরিবর্তন সমর্থিত নয়', 'error');
+                return;
+            }
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const outputs = devices.filter(d => d.kind === 'audiooutput');
+                if (!outputs.length) {
+                    showToast('কোনো অডিও আউটপুট ডিভাইস পাওয়া যায়নি', 'error');
+                    return;
+                }
+                const nextSpeakerState = !isSpeakerOn;
+                let targetDevice;
+                if (nextSpeakerState) {
+                    targetDevice = outputs.find(d => /speaker/i.test(d.label))
+                        || outputs.find(d => d.deviceId === 'default')
+                        || outputs[0];
+                } else {
+                    targetDevice = outputs.find(d => /earpiece|receiver/i.test(d.label))
+                        || outputs.find(d => d.deviceId !== 'default')
+                        || outputs[0];
+                }
+                await remoteVideoEl.setSinkId(targetDevice.deviceId);
+                isSpeakerOn = nextSpeakerState;
+                if (speakerBtn) {
+                    speakerBtn.classList.toggle('off', !isSpeakerOn);
+                    speakerBtn.innerHTML = isSpeakerOn ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-down"></i>';
+                }
+                showToast(isSpeakerOn ? 'লাউডস্পিকার চালু হয়েছে' : 'লাউডস্পিকার বন্ধ হয়েছে', 'success');
+            } catch (err) {
+                console.error('setSinkId error:', err);
+                showToast('স্পিকার পরিবর্তন করা যায়নি', 'error');
+            }
+        }
+
+        // কল শেষ (নিজে কেটেছি বা অন্য পক্ষ কেটেছে বা কানেকশন ফেইল করেছে) — সব ক্লিনআপ এখানে
+        async function endLiveCall(outcome) {
+            if (!isCallActive && !peerConnection) return; // ইতিমধ্যে বন্ধ, ডাবল-কল ঠেকানো হচ্ছে
+
+            const roomId = currentCallRoomId;
+            const call = currentCallInfo;
+            const wasActive = isCallActive;
+            const durationSec = callStartTs ? Math.round((Date.now() - callStartTs) / 1000) : 0;
+
+            isCallActive = false;
+            stopCallTimer();
+
+            // Listener cleanup
+            activeSignalRefs.forEach(ref => { try { ref.off(); } catch (e) {} });
+            activeSignalRefs = [];
+            if (activeCallWatchRef) { try { activeCallWatchRef.off(); } catch (e) {} activeCallWatchRef = null; }
+
+            if (peerConnection) {
+                try { peerConnection.close(); } catch (e) {}
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            remoteStream = null;
+
+            document.getElementById('liveCallScreen').classList.remove('active');
+            document.getElementById('callBubble').classList.remove('active');
+            isCallMinimized = false;
+            releaseBackTrap();
+
+            if (roomId) {
+                // সিগন্যালিং ডেটা ও activeCall মুছে ফেলা — পরের কলের জন্য পরিষ্কার থাকবে
+                database.ref(`chatRooms/${roomId}/activeCall`).remove().catch(() => {});
+                if (wasActive && call) {
+                    logCallMessage(roomId, call, outcome || 'completed', durationSec);
+                }
+            }
+
+            currentCallRoomId = null;
+            currentCallInfo = null;
+            callStartTs = null;
+        }
+
+        async function logCallMessage(roomId, call, outcome, durationSec) {
+            const message = {
+                senderId: call.from,
+                senderName: call.fromName,
+                type: 'call_log',
+                callType: call.type,
+                outcome: outcome,
+                duration: durationSec || 0,
+                timestamp: Date.now(),
+                delivered: true,
+                read: false
+            };
+            let previewText = '📞 কল';
+            if (outcome === 'missed') previewText = '📵 মিসড কল';
+            else if (outcome === 'declined') previewText = '❌ প্রত্যাখ্যাত কল';
+            else if (outcome === 'cancelled') previewText = '➖ বাতিল করা কল';
+            else previewText = `📞 কল · ${formatCallDuration(durationSec)}`;
+
+            try {
+                await database.ref(`messages/${roomId}`).push(message);
+                await database.ref(`chatRooms/${roomId}`).update({
+                    lastMessage: previewText,
+                    lastMessageTime: Date.now()
+                });
+                if (roomId === currentChatRoom) loadChatRooms();
+            } catch (error) {
+                console.error('Call log error:', error);
+            }
+        }
+
+        async function startCall(type) {
+            if (!currentChatRoom || !currentChatUser) return;
+            if (outgoingCallRoomId || activeIncomingCallRoomId || isCallActive) {
+                showToast('ইতিমধ্যে একটি কল চলছে', 'error');
+                return;
+            }
+
+            const roomId = currentChatRoom;
+            const roomName = `${CALL_ROOM_PREFIX}${roomId}_${Date.now()}`;
+            const callData = {
+                from: currentUserId,
+                fromName: currentUserName,
+                to: currentChatUser.uid,
+                roomName: roomName,
+                type: type,
+                status: 'ringing',
+                timestamp: Date.now()
+            };
+
+            try {
+                await database.ref(`chatRooms/${roomId}/activeCall`).set(callData);
+            } catch (error) {
+                console.error('Start call error:', error);
+                showToast('কল শুরু করতে সমস্যা হয়েছে', 'error');
+                return;
+            }
+
+            outgoingCallRoomId = roomId;
+            showOutgoingCallUI(currentChatUser.name, type);
+            watchOutgoingCallStatus(roomId, callData);
+        }
+
+        function showOutgoingCallUI(name, type) {
+            document.getElementById('outgoingCallName').textContent = name;
+            document.getElementById('outgoingCallStatusText').textContent = type === 'video' ? 'ভিডিও কল রিং হচ্ছে...' : 'অডিও কল রিং হচ্ছে...';
+            document.getElementById('outgoingCallOverlay').classList.add('active');
+            document.getElementById('callBubble').classList.remove('active');
+            isCallMinimized = false;
+            playSoundSafe(dialingSound); // NEW: কলিং/রিং-ব্যাক টোন
+            trapBackForCall(); // NEW: ব্যাক বাটনে যাতে সরাসরি হোমে চলে না যায়, আগে মিনিমাইজ হয়
+        }
+
+        function hideOutgoingCallUI() {
+            document.getElementById('outgoingCallOverlay').classList.remove('active');
+            document.getElementById('callBubble').classList.remove('active');
+            isCallMinimized = false;
+            stopSound(dialingSound);
+            releaseBackTrap();
+        }
+
+        function watchOutgoingCallStatus(roomId, callData) {
+            outgoingCallStatusRef = database.ref(`chatRooms/${roomId}/activeCall`);
+            outgoingCallTimer = setTimeout(() => handleOutgoingCallTimeout(roomId, callData), CALL_RING_TIMEOUT_MS);
+
+            outgoingCallStatusRef.on('value', (snap) => {
+                const call = snap.val();
+                if (!call) return; // ইতিমধ্যে ক্লিয়ার হয়ে গেছে
+
+                if (call.status === 'accepted') {
+                    clearTimeout(outgoingCallTimer);
+                    hideOutgoingCallUI();
+                    cleanupOutgoingCallListener();
+                    startWebRTCCall(roomId, call, true); // NEW: নিজস্ব WebRTC — caller হিসেবে
+                } else if (call.status === 'declined') {
+                    clearTimeout(outgoingCallTimer);
+                    hideOutgoingCallUI();
+                    logCallMessage(roomId, call, 'declined', 0);
+                    database.ref(`chatRooms/${roomId}/activeCall`).remove();
+                    cleanupOutgoingCallListener();
+                }
+            });
+        }
+
+        function cleanupOutgoingCallListener() {
+            if (outgoingCallStatusRef) {
+                outgoingCallStatusRef.off();
+                outgoingCallStatusRef = null;
+            }
+            outgoingCallRoomId = null;
+        }
+
+        function handleOutgoingCallTimeout(roomId, callData) {
+            hideOutgoingCallUI();
+            logCallMessage(roomId, callData, 'missed', 0);
+            database.ref(`chatRooms/${roomId}/activeCall`).remove().catch((error) => {
+                console.error('Timeout cleanup error:', error);
+            });
+            cleanupOutgoingCallListener();
+        }
+
+        function cancelOutgoingCall() {
+            if (!outgoingCallRoomId) return;
+            const roomId = outgoingCallRoomId;
+            clearTimeout(outgoingCallTimer);
+            hideOutgoingCallUI();
+            database.ref(`chatRooms/${roomId}/activeCall`).once('value').then((snap) => {
+                const call = snap.val();
+                if (call) logCallMessage(roomId, call, 'cancelled', 0);
+                return database.ref(`chatRooms/${roomId}/activeCall`).remove();
+            }).catch((error) => {
+                console.error('Cancel call cleanup error:', error);
+            });
+            cleanupOutgoingCallListener();
+        }
+
+        // ---- Incoming calls (global — works anywhere inside chat.html) ----
+
+        // CALL_RING_TIMEOUT_MS-এর চেয়ে পুরনো 'ringing' কল স্টেল ধরা হয় — এটাই মূলত caller-এর
+        // ডিভাইস ব্যাকগ্রাউন্ডে চলে যাওয়া/বন্ধ হওয়ায় caller-side timer না চলার বিপরীতে receiver-side
+        // safety-net (evidence: caller-এর 45s auto-missed timer শুধুই caller-এর নিজের browser tab-এ
+        // চলে, receiver-side-এ কোনো expiry check আগে ছিল না)।
+        function isCallStale(call) {
+            return !call || !call.timestamp || (Date.now() - call.timestamp) > CALL_RING_TIMEOUT_MS;
+        }
+
+        function checkForIncomingCalls(allRooms) {
+            if (!allRooms || !currentUserId) return;
+            for (const [roomId, room] of Object.entries(allRooms)) {
+                const call = room.activeCall;
+                if (!call || call.status !== 'ringing') continue;
+                if (!room.participants || !room.participants[currentUserId]) continue;
+                if (call.from === currentUserId) continue; // নিজেরই আউটগোয়িং কল
+
+                const callKey = `${roomId}_${call.timestamp}`;
+                if (dismissedCallIds.has(callKey)) continue;
+
+                if (isCallStale(call)) {
+                    // Stale ringing call — receiver নিজে থেকে popup সরিয়ে ফেলে, দরকার হলে Firebase-ও পরিষ্কার করে
+                    dismissedCallIds.add(callKey);
+                    if (activeIncomingCallRoomId === roomId) hideIncomingCallPopup();
+                    cleanupStaleActiveCall(roomId, call);
+                    continue;
+                }
+
+                if (!activeIncomingCallRoomId) {
+                    showIncomingCallPopup(roomId, call);
+                }
+                return; // একবারে একটাই পপআপ যথেষ্ট
+            }
+
+            // যদি এখন দেখানো কলটাই আর 'ringing' না থাকে (caller cancel করেছে), পপআপ সরিয়ে দাও
+            if (activeIncomingCallRoomId) {
+                const room = allRooms[activeIncomingCallRoomId];
+                if (!room || !room.activeCall || room.activeCall.status !== 'ringing') {
+                    hideIncomingCallPopup();
+                }
+            }
+        }
+
+        // স্টেল 'ringing' কল সেফলি ক্লিন করা হয় — শুধুমাত্র তখনই remove করা হয় যখন Firebase-এ
+        // এখনও ঠিক একই timestamp সহ 'ringing' status বিদ্যমান থাকে, যাতে caller ইতিমধ্যে নতুন কল
+        // শুরু করে থাকলে বা নিজে থেকেই cleanup করে থাকলে সেই ভিন্ন/নতুন active call overwrite না হয়।
+        function cleanupStaleActiveCall(roomId, expectedCall) {
+            const ref = database.ref(`chatRooms/${roomId}/activeCall`);
+            ref.once('value').then((snap) => {
+                const current = snap.val();
+                if (current && current.status === 'ringing' && current.timestamp === expectedCall.timestamp) {
+                    return ref.remove();
+                }
+            }).catch((error) => {
+                console.error('Stale call cleanup error:', error);
+            });
+        }
+
+        function showIncomingCallPopup(roomId, call) {
+            activeIncomingCallRoomId = roomId;
+            incomingCallData = call;
+            document.getElementById('incomingCallName').textContent = call.fromName || 'ভলান্টিয়ার';
+            document.getElementById('incomingCallTypeText').textContent = call.type === 'video' ? 'ইনকামিং ভিডিও কল...' : 'ইনকামিং অডিও কল...';
+            document.getElementById('incomingCallOverlay').classList.add('active');
+            document.getElementById('callBubble').classList.remove('active');
+            isCallMinimized = false;
+            if (navigator.vibrate) navigator.vibrate([300, 200, 300]);
+            playSoundSafe(ringtoneSound); // NEW: ইনকামিং কল রিংটোন
+            trapBackForCall(); // NEW: ব্যাক বাটনে যাতে সরাসরি হোমে চলে না যায়, আগে মিনিমাইজ হয়
+        }
+
+        function hideIncomingCallPopup() {
+            document.getElementById('incomingCallOverlay').classList.remove('active');
+            document.getElementById('callBubble').classList.remove('active');
+            isCallMinimized = false;
+            activeIncomingCallRoomId = null;
+            incomingCallData = null;
+            stopSound(ringtoneSound);
+            releaseBackTrap();
+        }
+
+        // ==================== NEW: CALL MINIMIZE / FLOATING BUBBLE (Messenger/WhatsApp স্টাইল) ====================
+        function minimizeCall() {
+            if (!outgoingCallRoomId && !activeIncomingCallRoomId && !isCallActive) return;
+            document.getElementById('outgoingCallOverlay').classList.remove('active');
+            document.getElementById('incomingCallOverlay').classList.remove('active');
+            document.getElementById('liveCallScreen').classList.remove('active'); // NEW: লাইভ কলও মিনিমাইজ হবে
+            document.getElementById('callBubble').classList.add('active');
+            isCallMinimized = true;
+            // সাউন্ড/ভাইব্রেশন/লাইভ অডিও-ভিডিও স্ট্রিম মিনিমাইজ করলেও চলতে থাকবে, শুধু বড় UI সরে যাবে
+        }
+
+        function expandCall() {
+            document.getElementById('callBubble').classList.remove('active');
+            isCallMinimized = false;
+            if (isCallActive) {
+                document.getElementById('liveCallScreen').classList.add('active'); // NEW: লাইভ কল আবার বড় হবে
+            } else if (outgoingCallRoomId) {
+                document.getElementById('outgoingCallOverlay').classList.add('active');
+            } else if (activeIncomingCallRoomId) {
+                document.getElementById('incomingCallOverlay').classList.add('active');
+            }
+        }
+
+        // NEW: ব্যাক বাটনে চাপলে সরাসরি পেইজ থেকে বেরিয়ে না গিয়ে প্রথমবার মিনিমাইজ হবে,
+        // দ্বিতীয়বার ব্যাক চাপলে স্বাভাবিকভাবেই পেইজ থেকে বের হয়ে যাবে (Messenger/WhatsApp-এর মতো আচরণ)
+        function trapBackForCall() {
+            if (callHistoryTrapped) return;
+            callHistoryTrapped = true;
+            try { history.pushState({ callTrap: true }, '', location.href); } catch (e) { /* ignore */ }
+        }
+
+        function releaseBackTrap() {
+            callHistoryTrapped = false;
+        }
+
+        window.addEventListener('popstate', () => {
+            if ((outgoingCallRoomId || activeIncomingCallRoomId || isCallActive) && !isCallMinimized) {
+                minimizeCall();
+                // পরের বার ব্যাক চাপলে যেন সত্যিই পেইজ থেকে বের হতে পারে, তাই আবার একটা ট্র্যাপ স্টেট বসানো হচ্ছে
+                try { history.pushState({ callTrap: true }, '', location.href); } catch (e) { /* ignore */ }
+            }
+        });
+
+        async function acceptIncomingCall() {
+            if (!activeIncomingCallRoomId) return;
+            const roomId = activeIncomingCallRoomId;
+            const call = incomingCallData;
+            // ⚠️ Root cause fix: hideIncomingCallPopup() সেট করে activeIncomingCallRoomId=null,
+            // কিন্তু Firebase status 'ringing' → 'accepted' আপডেট হতে একটু সময় লাগে। এই ফাঁকে
+            // অন্য যেকোনো chatRooms পরিবর্তনে checkForIncomingCalls() পুনরায় চলে এবং status এখনও
+            // 'ringing' দেখে একই popup আবার দেখিয়ে দিতে পারতো (accept কাজ না-করার মতো দেখাতো)।
+            // dismissedCallIds-এ আগে থেকেই যোগ করে রাখলে সেই race window বন্ধ হয়ে যায়।
+            dismissedCallIds.add(`${roomId}_${call.timestamp}`);
+            hideIncomingCallPopup();
+            try {
+                await database.ref(`chatRooms/${roomId}/activeCall`).update({ status: 'accepted', acceptedAt: Date.now() });
+            } catch (error) {
+                console.error('Accept call error:', error);
+                showToast('কল গ্রহণ করতে সমস্যা হয়েছে', 'error');
+                return;
+            }
+            startWebRTCCall(roomId, call, false); // NEW: নিজস্ব WebRTC — callee হিসেবে
+        }
+
+        async function declineIncomingCall() {
+            if (!activeIncomingCallRoomId) return;
+            const roomId = activeIncomingCallRoomId;
+            const call = incomingCallData;
+            dismissedCallIds.add(`${roomId}_${call.timestamp}`);
+            hideIncomingCallPopup();
+            try {
+                await database.ref(`chatRooms/${roomId}/activeCall`).update({ status: 'declined' });
+            } catch (error) {
+                console.error('Decline call error:', error);
+                showToast('কল প্রত্যাখ্যান করতে সমস্যা হয়েছে', 'error');
+            }
+        }
+
+        // ==================== QUICK REPLY ====================
+        // ==================== CLOSE CONVERSATION ====================
+        function closeConversation() {
+            if (chatMessagesRef) chatMessagesRef.off();
+            if (otherUserStatusRef) otherUserStatusRef.off();
+            if (typingListenerRef) { typingListenerRef.off(); typingListenerRef = null; }
+            currentChatRoom = null;
+            currentChatUser = null;
+            document.getElementById('conversationPage').classList.remove('active');
+            loadChatRooms();
+        }
+
+        // ==================== TAB SWITCH ====================
+        function switchTab(tab) {
+            const chatTab = document.getElementById('chatTabContent');
+            const volunteersTab = document.getElementById('volunteersTabContent');
+            const buttons = document.querySelectorAll('.tab-switch-btn');
+            
+            if (tab === 'chat') {
+                chatTab.style.display = 'block';
+                volunteersTab.style.display = 'none';
+                buttons[0].classList.add('active');
+                buttons[1].classList.remove('active');
+                loadChatRooms();
+            } else {
+                chatTab.style.display = 'none';
+                volunteersTab.style.display = 'block';
+                buttons[0].classList.remove('active');
+                buttons[1].classList.add('active');
+                loadVolunteers();
+            }
+        }
+
+        // ==================== SEARCH ====================
+        function handleSearch() {
+            if (document.querySelector('.tab-switch-btn.active').dataset.tab === 'chat') {
+                renderChatList();
+            } else {
+                renderVolunteerList();
+            }
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return '';
+            const diff = Date.now() - timestamp;
+            if (diff < 60000) return 'এখন';
+            if (diff < 3600000) return Math.floor(diff/60000) + ' মিনিট আগে';
+            if (diff < 86400000) {
+                const d = new Date(timestamp);
+                return (d.getHours()%12||12) + ':' + String(d.getMinutes()).padStart(2,'0');
+            }
+            if (diff < 172800000) return 'গতকাল';
+            return new Date(timestamp).toLocaleDateString('bn-BD', {day:'numeric', month:'short'});
+        }
+
+        function avatarHtml(avatarUrl, online, name) {
+            const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=16a34a&color=fff`;
+            const src = (avatarUrl && avatarUrl.startsWith('http')) ? avatarUrl : fallback;
+            const img = `<img src="${escapeHtml(src)}" alt="profile" onerror="this.src='${fallback}'">`;
+            return `${img}${online ? '<div class="online-dot"></div>' : '<div class="offline-dot"></div>'}`;
+        }
+
+        function formatLastSeen(timestamp) {
+            if (!timestamp) return 'অফলাইন';
+            const diff = Date.now() - timestamp;
+            if (diff < 60000) return 'এইমাত্র এপে ছিলেন';
+            if (diff < 3600000) return Math.floor(diff / 60000) + ' মিনিট আগে এপে ছিলেন';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + ' ঘন্টা আগে এপে ছিলেন';
+            if (diff < 172800000) return 'গতকাল এপে ছিলেন';
+            return new Date(timestamp).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' }) + ' তারিখে এপে ছিলেন';
+        }
+
+        function formatTime(timestamp) {
+            const d = new Date(timestamp);
+            return (d.getHours()%12||12) + ':' + String(d.getMinutes()).padStart(2,'0') + ' ' + (d.getHours()>=12?'PM':'AM');
+        }
+
+        function formatDate(timestamp) {
+            const d = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (d.toDateString() === today.toDateString()) return 'আজ';
+            if (d.toDateString() === yesterday.toDateString()) return 'গতকাল';
+            return d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // FIX: মেসেজ টেক্সট / নাম / URL-এ যদি সিঙ্গেল-কোট (') থাকে (যেমন "Don't", "O'Brien"),
+        // তাহলে onclick="fn('${escapeHtml(text)}')" প্যাটার্নে সেটা ইনলাইন JS স্ট্রিং ভেঙে ফেলতো —
+        // ফলে Edit/Delete/চ্যাট-ওপেন/ছবি-ভিউয়ার বাটন কোনো রেসপন্সই দিতো না (কনসোলে সাইলেন্ট JS এরর)।
+        // escapeHtml() দিয়ে এটা ঠিক করা যায় না, কারণ HTML entity ডিকোড হয় JS পার্স হওয়ার আগেই।
+        // সমাধান: JSON.stringify দিয়ে সঠিক JS স্ট্রিং লিটারেল বানিয়ে, শুধু তার ডাবল-কোটগুলো
+        // &quot; করে HTML অ্যাট্রিবিউটে নিরাপদে বসানো হচ্ছে।
+        function escapeJsAttr(text) {
+            return JSON.stringify(text == null ? '' : String(text)).replace(/"/g, '&quot;');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.innerHTML = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? '#ef4444' : 'linear-gradient(135deg, #16a34a, #15803d)'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 30px;
+                font-weight: 600;
+                font-size: 14px;
+                z-index: 9999;
+                animation: fadeInOut 2.5s ease;
+                white-space: nowrap;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        // ==================== CHECK FOR REQUEST CHAT ====================
+        function checkForRequestChat() {
+            const userId = localStorage.getItem('chatWithUserId');
+            const userName = localStorage.getItem('chatWithUserName');
+            
+            if (userId && userName) {
+                localStorage.removeItem('chatWithUserId');
+                localStorage.removeItem('chatWithUserName');
+                localStorage.removeItem('chatRequestId');
+                setTimeout(() => startChatWithUser(userId, userName), 800);
+            }
+        }
+
+        // ==================== PUSH NOTIFICATIONS (FCM) ====================
+        // NOTE: Replace this with YOUR project's VAPID key from
+        // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
+        const FCM_VAPID_KEY = 'PASTE_YOUR_VAPID_KEY_HERE';
+        let fcmMessaging = null;
+
+        async function setupNotifications() {
+            try {
+                if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                    console.warn('এই ব্রাউজারে নোটিফিকেশন সাপোর্ট নেই');
+                    return;
+                }
+
+                // Register the service worker that handles notifications
+                // when the site/app is closed or in the background.
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+                let permission = Notification.permission;
+                if (permission === 'default') {
+                    permission = await Notification.requestPermission();
+                }
+                if (permission !== 'granted') {
+                    console.warn('নোটিফিকেশন পারমিশন দেওয়া হয়নি');
+                    return;
+                }
+
+                fcmMessaging = firebase.messaging();
+
+                const token = await fcmMessaging.getToken({
+                    vapidKey: FCM_VAPID_KEY,
+                    serviceWorkerRegistration: registration
+                });
+
+                if (token && currentUserId) {
+                    await database.ref('users/' + currentUserId).update({
+                        fcmToken: token,
+                        fcmTokenUpdatedAt: Date.now()
+                    });
+                }
+
+                // Foreground messages (app open & tab focused) - show an in-app notification
+                fcmMessaging.onMessage((payload) => {
+                    const title = payload.notification?.title || 'নতুন মেসেজ';
+                    const body = payload.notification?.body || '';
+                    showToast(`💬 <b>${escapeHtml(title)}</b>: ${escapeHtml(body)}`);
+                    if (document.hidden && Notification.permission === 'granted') {
+                        new Notification(title, { body, icon: '/icons/icon-192.png' });
+                    }
+                });
+            } catch (error) {
+                console.error('Notification setup error:', error);
+            }
+        }
+
+        // ==================== INITIALIZE ====================
+        async function init() {
+            const loggedIn = await checkLogin();
+            if (!loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            loadChatRooms();
+            loadVolunteers();
+            checkForRequestChat();
+            setupChatLongPress();
+            setupMessageLongPress();
+            setupNotifications();
+            
+            // Real-time listeners
+            // ⚠️ Free-tier resource optimization: আগে 'chatRooms' path-এ দুইটি আলাদা .on('value')
+            // listener ছিল (একটা chat-list রিফ্রেশের জন্য, আরেকটা incoming-call check-এর জন্য) —
+            // দুটোই একই ডেটার উপর কাজ করছিল বলে একটিতে merge করা হয়েছে, ফাংশনালিটি অপরিবর্তিত।
+            database.ref('chatRooms').on('value', (snap) => {
+                const roomsVal = snap.val() || {};
+                // NEW: মেসেজ নোটিফিকেশন সাউন্ড — প্রতিটা রুমের unreadCount বেড়েছে কিনা তা তুলনা করে বাজানো হয়
+                if (notifSoundReady) {
+                    for (const roomId in roomsVal) {
+                        const room = roomsVal[roomId];
+                        if (!room.participants || !room.participants[currentUserId]) continue;
+                        const newCount = (room.unreadCount && room.unreadCount[currentUserId]) || 0;
+                        const prevCount = knownUnreadCounts[roomId] || 0;
+                        if (newCount > prevCount) {
+                            const conversationOpen = document.getElementById('conversationPage').classList.contains('active');
+                            const isThisRoomOpen = currentChatRoom === roomId && conversationOpen;
+                            if (!isThisRoomOpen) playSoundSafe(notifSound);
+                        }
+                        knownUnreadCounts[roomId] = newCount;
+                    }
+                } else {
+                    // প্রথম স্ন্যাপশট — শুধু বর্তমান unreadCount গুলো রেকর্ড করে রাখা হয়, সাউন্ড বাজানো হয় না
+                    for (const roomId in roomsVal) {
+                        const room = roomsVal[roomId];
+                        knownUnreadCounts[roomId] = (room.unreadCount && room.unreadCount[currentUserId]) || 0;
+                    }
+                    notifSoundReady = true;
+                }
+
+                if (document.querySelector('.tab-switch-btn.active').dataset.tab === 'chat') {
+                    loadChatRooms();
+                }
+                // Global incoming-call watcher — chat.html-এর যেকোনো জায়গায় থাকলে কাজ করবে
+                checkForIncomingCalls(roomsVal);
+            });
+            
+            database.ref('users').on('value', () => {
+                if (document.querySelector('.tab-switch-btn.active').dataset.tab === 'volunteers') {
+                    loadVolunteers();
+                }
+            });
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        document.querySelectorAll('.tab-switch-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+        
+        document.getElementById('convBackBtn')?.addEventListener('click', closeConversation);
+        document.getElementById('sendMsgBtn')?.addEventListener('click', sendMessage);
+        document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        document.getElementById('messageInput')?.addEventListener('input', handleTyping);
+        document.getElementById('searchInput')?.addEventListener('input', handleSearch);
+
+        // Image / voice / call controls
+        document.getElementById('attachBtn')?.addEventListener('click', () => {
+            document.getElementById('imageFileInput').click();
+        });
+        document.getElementById('imageFileInput')?.addEventListener('change', handleImageSelected);
+        document.getElementById('micBtn')?.addEventListener('click', toggleVoiceRecording);
+        document.getElementById('recordingCancelBtn')?.addEventListener('click', () => stopVoiceRecording(false));
+        document.getElementById('recordingSendBtn')?.addEventListener('click', () => stopVoiceRecording(true));
+        document.getElementById('audioCallBtn')?.addEventListener('click', () => startCall('audio'));
+        document.getElementById('videoCallBtn')?.addEventListener('click', () => startCall('video'));
+        document.getElementById('cancelOutgoingCallBtn')?.addEventListener('click', cancelOutgoingCall);
+        document.getElementById('acceptCallBtn')?.addEventListener('click', acceptIncomingCall);
+        document.getElementById('declineCallBtn')?.addEventListener('click', declineIncomingCall);
+        // NEW: মিনিমাইজ বাটন (ফিচার #2)
+        document.getElementById('minimizeOutgoingCallBtn')?.addEventListener('click', minimizeCall);
+        document.getElementById('minimizeIncomingCallBtn')?.addEventListener('click', minimizeCall);
+        // NEW: লাইভ WebRTC কল স্ক্রিনের বাটনসমূহ
+        document.getElementById('minimizeLiveCallBtn')?.addEventListener('click', minimizeCall);
+        document.getElementById('toggleMicBtn')?.addEventListener('click', toggleMic);
+        document.getElementById('toggleCamBtn')?.addEventListener('click', toggleCam);
+        document.getElementById('toggleSpeakerBtn')?.addEventListener('click', toggleSpeaker);
+        document.getElementById('endLiveCallBtn')?.addEventListener('click', () => endLiveCall('completed'));
+
+        // ==================== SIDEBAR & THEME ====================
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const themeToggleSidebar = document.getElementById('themeToggleSidebar');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        async function logout() {
+            try {
+                if (currentUserId) {
+                    await database.ref('users/' + currentUserId).update({
+                        online: false,
+                        lastSeen: Date.now()
+                    });
+                }
+                await auth.signOut();
+                localStorage.clear();
+                window.location.href = 'login.html';
+            } catch (error) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        if (menuBtn) menuBtn.addEventListener('click', toggleSidebar);
+        if (overlay) overlay.addEventListener('click', toggleSidebar);
+        if (themeToggleSidebar) themeToggleSidebar.addEventListener('click', toggleTheme);
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar?.classList.contains('open')) {
+                toggleSidebar();
+            }
+        });
+
+        // Make functions global
+        window.startChatWithVolunteer = startChatWithVolunteer;
+        window.startChatWithUser = startChatWithUser;
+        window.openChat = openChat;
+        window.sendMessage = sendMessage;
+        window.closeConversation = closeConversation;
+        window.editMessage = editMessage;
+        window.deleteMessage = deleteMessage;
+        window.openImageViewer = openImageViewer;
+        window.closeImageViewer = closeImageViewer;
+
+        initTheme();
+        init();
+    </script>
+
+    <!-- Image Viewer Lightbox (NEW: ডাউনলোড + ক্লোজ বাটন যোগ হলো) -->
+    <div class="image-viewer" id="imageViewer" onclick="closeImageViewer()">
+        <div class="image-viewer-actions" onclick="event.stopPropagation()">
+            <button class="iv-action-btn" id="imageDownloadBtn" title="ডাউনলোড করুন"><i class="fas fa-download"></i></button>
+            <button class="iv-action-btn" onclick="closeImageViewer()" title="বন্ধ করুন"><i class="fas fa-times"></i></button>
+        </div>
+        <img id="imageViewerImg" src="" alt="image" onclick="event.stopPropagation()">
+    </div>
+</body>
+</html>

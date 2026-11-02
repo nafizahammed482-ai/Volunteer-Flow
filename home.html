@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Volunteer Flow - ভলান্টিয়ার ড্যাশবোর্ড</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-pattern"></div>
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">Volunteer Flow</div>
+            <div class="header-actions">
+                <button class="header-icon" id="addDonorBtn" onclick="navigateWithLoading('add-donor.html')" title="ডোনার যোগ করুন">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                <button class="header-icon" id="readyDonorBtn" onclick="navigateWithLoading('ready-donor.html')" title="রেডি ডোনার">
+                    <i class="fas fa-tint"></i>
+                </button>
+                <button class="header-icon" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- ==================== GREETING SECTION ==================== -->
+        <div class="greeting-card animate-slide-up">
+            <div class="greeting-text">
+                <h1 class="greeting-title">
+                    <span id="greetingWord">শুভ সকাল</span> 👋
+                </h1>
+                <p class="greeting-name" id="volunteerName">ভলান্টিয়ার</p>
+                <div class="greeting-stats">
+                    <span class="stat-chip"><i class="fas fa-chart-line"></i> <span id="activeDays">০</span> দিন সক্রিয়</span>
+                </div>
+            </div>
+            <div class="greeting-points">
+                <div class="points-badge-large pulse-animation">
+                    <i class="fas fa-star"></i>
+                    <span id="totalPointsDisplay">0</span>
+                    <small>পয়েন্ট</small>
+                </div>
+                <div class="badge-chip" id="userBadge">
+                    <i class="fas fa-seedling"></i> "নতুন" ব্যাজ
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== STATISTICS CARDS ==================== -->
+        <div class="stats-grid">
+            <div class="stat-card animate-fade-in-up" style="animation-delay: 0.1s">
+                <div class="stat-icon blue">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">মোট রিকোয়েস্ট</span>
+                    <span class="stat-value" id="totalRequests">0</span>
+                    <span class="stat-trend positive" id="totalRequestsTrend"><i class="fas fa-arrow-up"></i> 0%</span>
+                </div>
+            </div>
+            <div class="stat-card animate-fade-in-up" style="animation-delay: 0.2s">
+                <div class="stat-icon yellow">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">পেন্ডিং রিকোয়েস্ট</span>
+                    <span class="stat-value" id="pendingRequests">0</span>
+                    <span class="stat-trend negative" id="pendingRequestsTrend"><i class="fas fa-arrow-down"></i> 0%</span>
+                </div>
+            </div>
+            <div class="stat-card animate-fade-in-up" style="animation-delay: 0.3s">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">সফল ডোনেশন</span>
+                    <span class="stat-value" id="completedDonations">0</span>
+                    <span class="stat-trend positive" id="completedDonationsTrend"><i class="fas fa-arrow-up"></i> 0%</span>
+                </div>
+            </div>
+            <div class="stat-card animate-fade-in-up" style="animation-delay: 0.4s">
+                <div class="stat-icon purple">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">মোট ডোনার</span>
+                    <span class="stat-value" id="totalDonors">0</span>
+                    <span class="stat-trend positive" id="totalDonorsTrend"><i class="fas fa-arrow-up"></i> 0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== WEEKLY CHALLENGE (Global) ==================== -->
+        <div class="challenge-card animate-slide-up">
+            <div class="challenge-header">
+                <div class="challenge-title-wrap">
+                    <i class="fas fa-calendar-week"></i>
+                    <h3>সাপ্তাহিক চ্যালেঞ্জ</h3>
+                </div>
+                <span class="time-left" id="challengeTimeLeft">৪ দিন বাকি!</span>
+            </div>
+            <div class="challenge-tasks">
+                <div class="task-item">
+                    <div class="task-info">
+                        <span class="task-icon"><i class="fas fa-user-plus"></i></span>
+                        <span class="task-name">মোট ডোনার এড (সকল ভলান্টিয়ার)</span>
+                        <span class="task-progress-text" id="globalDonorTask">0/200</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="globalDonorFill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="task-item">
+                    <div class="task-info">
+                        <span class="task-icon"><i class="fas fa-hand-holding-heart"></i></span>
+                        <span class="task-name">মোট ডোনেশন অ্যারেঞ্জ (সকল ভলান্টিয়ার)</span>
+                        <span class="task-progress-text" id="globalDonationTask">0/150</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="globalDonationFill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="task-item">
+                    <div class="task-info">
+                        <span class="task-icon"><i class="fas fa-calendar-check"></i></span>
+                        <span class="task-name">মোট ইভেন্ট পার্টিসিপেশন (সকল ভলান্টিয়ার)</span>
+                        <span class="task-progress-text" id="globalEventTask">0/60</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="globalEventFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="challenge-reward">
+                <i class="fas fa-gift"></i> চ্যালেঞ্জ কমপ্লিট করলে সকল ভলান্টিয়ার পাবেন: <strong>+৫০ পয়েন্ট</strong> ও <strong>"উইক চ্যাম্পিয়ন" ব্যাজ!</strong>
+            </div>
+        </div>
+
+        <!-- ==================== QUICK ACTIONS ==================== -->
+        <div class="quick-actions">
+            <button class="action-btn primary-action" onclick="navigateWithLoading('add-donor.html')">
+                <div class="action-icon"><i class="fas fa-user-plus"></i></div>
+                <div class="action-content">
+                    <span class="action-title">ডোনার এড</span>
+                    <span class="action-points">+৫ পয়েন্ট</span>
+                </div>
+            </button>
+            <button class="action-btn secondary-action" onclick="navigateWithLoading('ready-donor.html')">
+                <div class="action-icon"><i class="fas fa-database"></i></div>
+                <div class="action-content">
+                    <span class="action-title">ডোনার ডাটাবেস</span>
+                    <span class="action-points">খুঁজুন</span>
+                </div>
+            </button>
+            <button class="action-btn primary-action" onclick="navigateWithLoading('date.html')">
+                <div class="action-icon"><i class="fas fa-calendar-alt"></i></div>
+                <div class="action-content">
+                    <span class="action-title">ডোনেশন ডেট আপডেট</span>
+                    <span class="action-points">+২ পয়েন্ট</span>
+                </div>
+            </button>
+            <button class="action-btn secondary-action" onclick="navigateWithLoading('request.html')">
+                <div class="action-icon"><i class="fas fa-clipboard-list"></i></div>
+                <div class="action-content">
+                    <span class="action-title">রিকোয়েস্ট</span>
+                    <span class="action-points">ম্যানেজ</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- ==================== URGENT REQUESTS PREVIEW ==================== -->
+        <div class="urgent-card animate-fade-in">
+            <div class="urgent-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> জরুরি রিকোয়েস্ট</h3>
+                <span class="urgent-count" id="urgentCount">০টি অপেক্ষমান</span>
+            </div>
+            <div class="urgent-list" id="urgentRequestsList">
+                <div class="loading-placeholder">লোড হচ্ছে...</div>
+            </div>
+            <button class="view-all-btn" onclick="navigateWithLoading('request.html')">সব রিকোয়েস্ট দেখুন <i class="fas fa-arrow-right"></i></button>
+        </div>
+
+        <!-- ==================== RECENT ACTIVITY ==================== -->
+        <div class="activity-card animate-fade-in-up">
+            <h3 class="section-title"><i class="fas fa-history"></i> সর্বশেষ কার্যকলাপ</h3>
+            <div class="activity-list" id="activityList">
+                <div class="loading-placeholder">লোড হচ্ছে...</div>
+            </div>
+        </div>
+
+        <!-- ==================== MINI LEADERBOARD ==================== -->
+        <div class="leaderboard-preview animate-slide-up">
+            <div class="leaderboard-header-preview">
+                <h3><i class="fas fa-trophy"></i> সপ্তাহের সেরা</h3>
+                <button class="view-link" onclick="navigateWithLoading('leaderboard.html')">লিডারবোর্ড দেখুন <i class="fas fa-arrow-right"></i></button>
+            </div>
+            <div class="leaderboard-list" id="leaderboardPreview">
+                <div class="loading-placeholder">লোড হচ্ছে...</div>
+            </div>
+            <div class="user-rank" id="userRankDisplay">
+                <i class="fas fa-user-circle"></i>
+                <span>আপনার র‍্যাঙ্ক: <strong>লোড হচ্ছে...</strong></span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-tab active" data-page="home" onclick="navigateWithLoading('home.html')">
+                <i class="fas fa-home"></i>
+                <span>হোম</span>
+            </button>
+            <button class="bottom-tab" data-page="profile" onclick="navigateWithLoading('profile.html')">
+                <i class="fas fa-user"></i>
+                <span>প্রোফাইল</span>
+            </button>
+            <button class="bottom-tab" data-page="chat" onclick="navigateWithLoading('chat.html')">
+                <i class="fas fa-comment-dots"></i>
+                <span>চ্যাট</span>
+                <span class="badge" id="chatBadge">০</span>
+            </button>
+            <button class="bottom-tab" data-page="request" onclick="navigateWithLoading('request.html')">
+                <i class="fas fa-clipboard-list"></i>
+                <span>রিকোয়েস্ট</span>
+                <span class="badge" id="requestBadge">০</span>
+            </button>
+            <button class="bottom-tab" data-page="leaderboard" onclick="navigateWithLoading('leaderboard.html')">
+                <i class="fas fa-trophy"></i>
+                <span>লিডারবোর্ড</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><i class="fas fa-bars"></i> মেনু</h3>
+        <div class="sidebar-item" onclick="navigateWithLoading('home.html')">
+            <i class="fas fa-home"></i> <span>হোম</span>
+        </div>
+        <div class="sidebar-item" onclick="navigateWithLoading('profile.html')">
+            <i class="fas fa-user"></i> <span>প্রোফাইল</span>
+        </div>
+        <div class="sidebar-item" onclick="navigateWithLoading('settings.html')">
+            <i class="fas fa-cog"></i> <span>সেটিংস</span>
+        </div>
+        <div class="sidebar-item" onclick="navigateWithLoading('our_team.html')">
+            <i class="fas fa-users"></i> <span>আমার দল</span>
+        </div>
+        <div class="sidebar-item" onclick="navigateWithLoading('event.html')">
+            <i class="fas fa-calendar-alt"></i> <span>ইভেন্ট</span>
+        </div>
+        <div class="sidebar-item" onclick="navigateWithLoading('profile.html#activities')">
+            <i class="fas fa-tasks"></i> <span>আমার কার্যক্রম</span>
+        </div>
+        <div class="theme-toggle">
+            <span><i class="fas fa-moon"></i> ডার্ক মোড</span>
+            <button id="themeToggleSidebar"></button>
+        </div>
+        <div class="sidebar-item logout-item" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>লগআউট</span>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

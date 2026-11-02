@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bondhon Blood Donate Society</title>
+    <style>
+        /* ==================== ভলান্টিয়ার অ্যাপ থিম কালার ==================== */
+        :root {
+            --bg: #f8faf8;
+            --bg-secondary: #f0f5f0;
+            --fg: #1a2e1a;
+            --muted: #2d4a2d;
+            --accent: #16a34a;
+            --accent-dark: #15803d;
+            --accent-light: #dcfce7;
+            --card: #ffffff;
+            --border: #cbd5cb;
+            --glow: rgba(22, 163, 74, 0.15);
+            --danger: #ef4444;
+            --danger-dark: #dc2626;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a1a0a;
+            --bg-secondary: #0f240f;
+            --fg: #eaf5ea;
+            --muted: #6ba36b;
+            --accent: #22c55e;
+            --accent-dark: #16a34a;
+            --accent-light: #14532d;
+            --card: #132713;
+            --border: #2a452a;
+            --glow: rgba(34, 197, 94, 0.3);
+        }
+
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        /* ভলান্টিয়ার অ্যাপের ব্যাকগ্রাউন্ড প্যাটার্ন */
+        .background-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            opacity: 0.05;
+            background-image: radial-gradient(circle at 25% 25%, var(--accent) 2px, transparent 2px),
+                              radial-gradient(circle at 75% 75%, var(--accent) 2px, transparent 2px);
+            background-size: 100px 100px;
+            animation: patternMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        /* Floating Orbs (ভলান্টিয়ার অ্যাপের মতো) */
+        .floating-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent);
+            top: -100px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-dark);
+            bottom: 20%;
+            left: -50px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, 30px) scale(1.1); }
+            50% { transform: translate(-20px, 50px) scale(0.95); }
+            75% { transform: translate(40px, -20px) scale(1.05); }
+        }
+
+        /* Main Splash Container */
+        .splash-container {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 20px;
+            animation: fadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Logo Container */
+        .logo-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin-bottom: 60px;
+            perspective: 1000px;
+        }
+
+        .logo-float-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            animation: floatLogo 6s ease-in-out infinite;
+        }
+
+        /* Logo Image */
+        .logo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 15px 30px var(--glow));
+            transform: scale(1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo-image:hover {
+            transform: scale(1.02);
+            filter: drop-shadow(0 20px 40px var(--glow));
+        }
+
+        /* Logo Glow */
+        .logo-glow {
+            position: absolute;
+            width: 110%;
+            height: 110%;
+            top: -5%;
+            left: -5%;
+            background: radial-gradient(circle, var(--glow) 0%, rgba(22, 163, 74, 0.08) 30%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+            animation: pulseGlow 4s ease-in-out infinite alternate;
+        }
+
+        /* Welcome Text */
+        .welcome-text {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: var(--fg);
+            text-align: center;
+            margin-bottom: 25px;
+            animation: slideUpFade 1.5s ease-out 0.5s both;
+            line-height: 1.2;
+            letter-spacing: 1px;
+        }
+
+        .welcome-text span {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .welcome-text span::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.5;
+        }
+
+        .tagline {
+            font-size: 1.4rem;
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 60px;
+            animation: slideUpFade 1.5s ease-out 0.8s both;
+            font-weight: 400;
+            max-width: 450px;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+            padding: 0 20px;
+        }
+
+        /* Loading Container */
+        .loading-container {
+            width: 350px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 40px;
+            animation: fadeInUp 1s ease-out 1s both;
+            position: relative;
+        }
+
+        .loading-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent) 0%, #4ade80 50%, var(--accent) 100%);
+            border-radius: 2px;
+            position: relative;
+            animation: loading 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            box-shadow: 0 0 10px var(--glow);
+        }
+
+        .loading-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        /* Percentage */
+        .percentage {
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            background: var(--card);
+            padding: 6px 14px;
+            border-radius: 15px;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 12px var(--glow);
+            animation: bounceIn 0.5s ease-out 1s both;
+        }
+
+        /* Footer Text */
+        .footer-text {
+            position: absolute;
+            bottom: 50px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            animation: fadeIn 2s ease-out 1.2s both;
+            text-align: center;
+            width: 100%;
+            letter-spacing: 1px;
+            font-weight: 400;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounceIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50%) scale(0.3);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(-50%) scale(1);
+            }
+        }
+
+        @keyframes floatLogo {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-15px) rotate(1deg);
+            }
+        }
+
+        @keyframes patternMove {
+            0% {
+                background-position: 0 0, 50px 50px;
+            }
+            100% {
+                background-position: 100px 100px, 150px 150px;
+            }
+        }
+
+        @keyframes loading {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .logo-container {
+                width: 280px;
+                height: 280px;
+            }
+
+            .welcome-text {
+                font-size: 2.5rem;
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+                max-width: 350px;
+            }
+
+            .loading-container {
+                width: 280px;
+            }
+
+            .percentage {
+                right: -50px;
+                font-size: 1.1rem;
+                padding: 5px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-container {
+                width: 240px;
+                height: 240px;
+                margin-bottom: 50px;
+            }
+
+            .welcome-text {
+                font-size: 2rem;
+            }
+
+            .tagline {
+                font-size: 1rem;
+                margin-bottom: 50px;
+                max-width: 280px;
+                padding: 0 15px;
+            }
+
+            .loading-container {
+                width: 240px;
+                margin-top: 30px;
+            }
+
+            .percentage {
+                right: -45px;
+                font-size: 1rem;
+                padding: 4px 10px;
+            }
+
+            .footer-text {
+                bottom: 40px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .logo-container {
+                width: 200px;
+                height: 200px;
+            }
+
+            .welcome-text {
+                font-size: 1.8rem;
+            }
+
+            .tagline {
+                font-size: 0.9rem;
+                max-width: 240px;
+            }
+
+            .loading-container {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Pattern -->
+    <div class="background-pattern"></div>
+    
+    <!-- Floating Orbs (ভলান্টিয়ার অ্যাপের মতো) -->
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+
+    <!-- Main Content -->
+    <div class="splash-container">
+        <!-- Logo Container -->
+        <div class="logo-container">
+            <div class="logo-float-container">
+                <div class="logo-glow"></div>
+                <img src="https://i.imgpeek.com/fjS97lIkqHeL" alt="Volunteer Flow Logo" class="logo-image">
+            </div>
+        </div>
+
+        <!-- Welcome Text -->
+        <div class="welcome-text">
+            <span>Volunteer Flow</span>
+        </div>
+        <div class="tagline">Team of Bondhon Blood Donate Society</div>
+
+        <!-- Loading Animation -->
+        <div class="loading-container">
+            <div class="loading-bar"></div>
+            <div class="percentage" id="percentage">0%</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-text">Loading Life-Saving Platform...</div>
+    </div>
+
+    <script>
+        // ==================== DARK MODE CHECK ====================
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        initTheme();
+
+        // ==================== PREMIUM PERCENTAGE COUNTER ====================
+        let percentage = 0;
+        const percentageElement = document.getElementById('percentage');
+        const loadingBar = document.querySelector('.loading-bar');
+        const duration = 3000;
+        const interval = 20;
+        const steps = duration / interval;
+        let currentStep = 0;
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function updatePercentage() {
+            if (currentStep <= steps) {
+                const progress = currentStep / steps;
+                const easedProgress = easeOutCubic(progress);
+                
+                percentage = Math.min(100, easedProgress * 100);
+                percentageElement.textContent = Math.round(percentage) + '%';
+                
+                // Milestone animation
+                if (Math.round(percentage) % 25 === 0 && percentage > 0) {
+                    percentageElement.style.animation = 'none';
+                    void percentageElement.offsetWidth;
+                    percentageElement.style.animation = 'bounceIn 0.3s ease-out';
+                    
+                    if (percentage >= 75) {
+                        percentageElement.style.color = '#2E7D32';
+                        percentageElement.style.borderColor = '#2E7D32';
+                    }
+                }
+
+                currentStep++;
+                setTimeout(updatePercentage, interval);
+            } else {
+                // Final completion
+                percentageElement.textContent = '100%';
+                percentageElement.style.color = '#2E7D32';
+                percentageElement.style.borderColor = '#2E7D32';
+                percentageElement.style.background = '#E8F5E9';
+                loadingBar.style.boxShadow = '0 0 25px rgba(46, 125, 50, 0.4)';
+                
+                // Logo completion animation
+                const logoImage = document.querySelector('.logo-image');
+                logoImage.style.transform = 'scale(1.05)';
+                logoImage.style.filter = 'drop-shadow(0 25px 50px var(--glow))';
+                
+                // Smooth transition
+                setTimeout(() => {
+                    document.body.style.opacity = '0';
+                    document.body.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    setTimeout(() => {
+                        window.location.href = 'home.html';
+                    }, 600);
+                }, 500);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(updatePercentage, 300);
+            
+            // Logo hover interaction
+            const logoImage = document.querySelector('.logo-image');
+            logoImage.addEventListener('mouseenter', () => {
+                logoImage.style.transform = 'scale(1.08)';
+            });
+            
+            logoImage.addEventListener('mouseleave', () => {
+                if (percentage < 100) {
+                    logoImage.style.transform = 'scale(1)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

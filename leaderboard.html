@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>লিডারবোর্ড - Volunteer Flow</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f8faf8;
+            --bg-secondary: #f0f5f0;
+            --fg: #1a2e1a;
+            --muted: #2d4a2d;
+            --accent: #16a34a;
+            --accent-dark: #15803d;
+            --accent-light: #dcfce7;
+            --card: #ffffff;
+            --card-hover: #f1f8f1;
+            --border: #cbd5cb;
+            --glow: rgba(22, 163, 74, 0.15);
+            --shadow: rgba(0, 0, 0, 0.05);
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a1a0a;
+            --bg-secondary: #0f240f;
+            --fg: #eaf5ea;
+            --muted: #6ba36b;
+            --accent: #22c55e;
+            --accent-dark: #16a34a;
+            --accent-light: #14532d;
+            --card: #132713;
+            --card-hover: #1a3a1a;
+            --border: #2a452a;
+            --glow: rgba(34, 197, 94, 0.3);
+            --shadow: rgba(0, 0, 0, 0.2);
+            --danger: #f87171;
+            --danger-light: #450a0a;
+            --warning: #fbbf24;
+            --warning-light: #451a03;
+            --info: #60a5fa;
+            --info-light: #1e3a5f;
+            --purple: #a78bfa;
+            --purple-light: #2e1065;
+        }
+
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--card);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+        }
+
+        .header-inner {
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, var(--accent) 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .header-icon:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            color: var(--accent);
+            background: var(--card-hover);
+            transform: translateX(-3px);
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 20px;
+        }
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* Stats Cards - FIXED (পুরোপুরি দেখা যাবে) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 14px 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            min-width: 0;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
+        /* Search Card */
+        .search-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-box i {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            color: var(--fg);
+            font-size: 16px;
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+
+        .search-input:focus {
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: var(--muted);
+            opacity: 0.6;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            gap: 4px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: transparent;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 10px var(--glow);
+        }
+
+        /* Podium */
+        .podium {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding: 10px 0;
+        }
+
+        .podium-card {
+            text-align: center;
+            flex: 1;
+            max-width: 110px;
+            padding: 12px 8px;
+            border-radius: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .podium-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px var(--shadow);
+        }
+
+        .podium-card.first {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: none;
+        }
+        .podium-card.first .podium-name,
+        .podium-card.first .podium-points,
+        .podium-card.first .podium-badge {
+            color: white;
+        }
+
+        .podium-card.second { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); border: none; }
+        .podium-card.third { background: linear-gradient(135deg, #cd7f32 0%, #b45309 100%); border: none; }
+        .podium-card.second .podium-name,
+        .podium-card.second .podium-points,
+        .podium-card.second .podium-badge,
+        .podium-card.third .podium-name,
+        .podium-card.third .podium-points,
+        .podium-card.third .podium-badge {
+            color: white;
+        }
+
+        .podium-rank {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .podium-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 8px;
+            border: 3px solid white;
+        }
+
+        .podium-card.first .podium-avatar { width: 75px; height: 75px; }
+        .podium-name { font-weight: 700; font-size: 14px; margin-top: 4px; word-break: break-word; }
+        .podium-points { font-size: 11px; font-weight: 600; margin-top: 2px; }
+        .podium-badge { font-size: 20px; margin-top: 4px; }
+
+        /* Your Rank Card */
+        .your-rank-card {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            border-radius: 20px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .your-rank-left .your-rank-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .your-rank-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .your-rank-points {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .next-rank-info {
+            font-size: 11px;
+            margin-top: 6px;
+            opacity: 0.9;
+        }
+
+        .your-rank-right {
+            text-align: right;
+        }
+
+        .your-rank-right i {
+            font-size: 36px;
+            opacity: 0.8;
+        }
+
+        /* Leaderboard List */
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            background: var(--card);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            border-color: var(--accent);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        .leaderboard-rank {
+            width: 40px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .leaderboard-rank.top-1 { color: #fbbf24; font-size: 24px; }
+        .leaderboard-rank.top-2 { color: #94a3b8; font-size: 22px; }
+        .leaderboard-rank.top-3 { color: #cd7f32; font-size: 20px; }
+
+        .leaderboard-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent);
+            flex-shrink: 0;
+        }
+
+        .leaderboard-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .leaderboard-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--fg);
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .leaderboard-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+
+        .leaderboard-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .leaderboard-points {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .points-value {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--accent);
+        }
+
+        .points-label {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 380px;
+            width: 90%;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .points-breakdown {
+            margin: 16px 0;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .breakdown-value {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .total-points {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 2px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+        }
+
+        /* Loading & Empty States */
+        .loading-placeholder, .empty-placeholder {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--muted);
+        }
+
+        .loading-placeholder i, .empty-placeholder i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+            opacity: 0.4;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent, var(--bg) 20%);
+            padding-top: 20px;
+            z-index: 100;
+        }
+
+        .bottom-nav-inner {
+            display: flex;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 15px var(--shadow);
+        }
+
+        .bottom-tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
+            position: relative;
+        }
+
+        .bottom-tab.active {
+            color: var(--accent);
+        }
+
+        .bottom-tab i {
+            font-size: 1.3rem;
+        }
+
+        .bottom-tab span {
+            font-size: 0.7rem;
+        }
+
+        .bottom-tab .badge {
+            position: absolute;
+            top: 0;
+            right: calc(50% - 20px);
+            background: var(--danger);
+            color: white;
+            font-size: 0.6rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 280px;
+            height: 100vh;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            transition: right 0.3s ease;
+            z-index: 99;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: -4px 0 20px var(--shadow);
+        }
+
+        .sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--fg);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-item:hover {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            margin: 12px 0;
+        }
+
+        .theme-toggle button {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px;
+            width: 52px;
+            height: 28px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .theme-toggle button::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            left: 3px;
+            top: 3px;
+            transition: transform 0.3s ease;
+        }
+
+        [data-theme="dark"] .theme-toggle button::before {
+            transform: translateX(26px);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 98;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .logout-item {
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+            padding-top: 12px;
+            color: var(--danger);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .podium { gap: 6px; }
+            .podium-card { padding: 8px 4px; }
+            .podium-avatar { width: 45px; height: 45px; }
+            .podium-card.first .podium-avatar { width: 55px; height: 55px; }
+            .podium-rank { font-size: 24px; }
+            .podium-name { font-size: 11px; }
+            .leaderboard-stats { gap: 8px; }
+            .leaderboard-item { gap: 10px; padding: 10px 12px; }
+            .leaderboard-rank { width: 32px; font-size: 14px; }
+            .leaderboard-rank.top-1 { font-size: 20px; }
+            .leaderboard-rank.top-2 { font-size: 18px; }
+            .leaderboard-rank.top-3 { font-size: 16px; }
+            .leaderboard-avatar { width: 40px; height: 40px; }
+            .points-value { font-size: 15px; }
+            .your-rank-value { font-size: 18px; }
+            
+            /* Stats card mobile fix */
+            .stats-grid {
+                gap: 8px;
+            }
+            .stat-card {
+                padding: 10px 6px;
+            }
+            .stat-icon {
+                font-size: 22px;
+            }
+            .stat-value {
+                font-size: 16px;
+            }
+            .stat-label {
+                font-size: 10px;
+            }
+        }
+
+        /* Disable zoom on input focus */
+        input, select, textarea, button {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">Volunteer Flow</div>
+            <div class="header-actions">
+                <button class="header-icon" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="leaderboard-page">
+            <!-- Back Button -->
+            <button class="back-btn" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i>
+                ড্যাশবোর্ডে ফিরুন
+            </button>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-trophy"></i> লিডারবোর্ড
+                </h1>
+                <p class="page-subtitle">পয়েন্ট অনুযায়ী শীর্ষ ভলান্টিয়াররা</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="totalVolunteers">0</div>
+                    <div class="stat-label">মোট ভলান্টিয়ার</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="totalPoints">0</div>
+                    <div class="stat-label">মোট পয়েন্ট</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="avgPoints">0</div>
+                    <div class="stat-label">গড় পয়েন্ট</div>
+                </div>
+            </div>
+
+            <!-- Search Card -->
+            <div class="search-card">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="search-input" id="searchInput" placeholder="নাম দিয়ে ভলান্টিয়ার খুঁজুন...">
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-filter="alltime">
+                    <i class="fas fa-globe"></i> সর্বকাল
+                </button>
+                <button class="filter-btn" data-filter="monthly">
+                    <i class="fas fa-calendar-alt"></i> এই মাস
+                </button>
+                <button class="filter-btn" data-filter="weekly">
+                    <i class="fas fa-calendar-week"></i> এই সপ্তাহ
+                </button>
+            </div>
+
+            <!-- Podium (Top 3) -->
+            <div class="podium" id="podiumContainer">
+                <div class="loading-placeholder" style="padding: 20px;">
+                    <i class="fas fa-spinner fa-pulse"></i> লোড হচ্ছে...
+                </div>
+            </div>
+
+            <!-- Your Rank Card -->
+            <div id="yourRankCard" class="your-rank-card" style="display: none;"></div>
+
+            <!-- Leaderboard List -->
+            <div class="leaderboard-list" id="leaderboardList">
+                <div class="loading-placeholder">
+                    <i class="fas fa-spinner fa-pulse"></i>
+                    লিডারবোর্ড লোড হচ্ছে...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-tab" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i>
+                <span>হোম</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i>
+                <span>প্রোফাইল</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='chat.html'">
+                <i class="fas fa-comment-dots"></i>
+                <span>চ্যাট</span>
+                <span class="badge" id="bottomChatBadge">0</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='request.html'">
+                <i class="fas fa-clipboard-list"></i>
+                <span>রিকোয়েস্ট</span>
+                <span class="badge" id="bottomRequestBadge">0</span>
+            </button>
+            <button class="bottom-tab active">
+                <i class="fas fa-trophy"></i>
+                <span>লিডারবোর্ড</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><i class="fas fa-bars"></i> মেনু</h3>
+        <div class="sidebar-item" onclick="window.location.href='home.html'">
+            <i class="fas fa-home"></i> <span>হোম</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html'">
+            <i class="fas fa-user"></i> <span>প্রোফাইল</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='settings.html'">
+            <i class="fas fa-cog"></i> <span>সেটিংস</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='our_team.html'">
+            <i class="fas fa-users"></i> <span>আমার দল</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='event.html'">
+            <i class="fas fa-calendar-alt"></i> <span>ইভেন্ট</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html#activities'">
+            <i class="fas fa-tasks"></i> <span>আমার কার্যক্রম</span>
+        </div>
+        <div class="theme-toggle">
+            <span><i class="fas fa-moon"></i> ডার্ক মোড</span>
+            <button id="themeToggleSidebar"></button>
+        </div>
+        <div class="sidebar-item logout-item" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>লগআউট</span>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Points Breakdown Modal -->
+    <div class="modal-overlay" id="pointsModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closePointsModal()">✕</button>
+            <h3 class="modal-title" id="modalUserName">পয়েন্ট ব্রেকডাউন</h3>
+            <div class="points-breakdown" id="pointsBreakdown"></div>
+            <div class="total-points" id="totalPointsBreakdown"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkbx3T_QrtgHWCfAv_6Tltc_W5YxrFH-Q",
+            authDomain: "bbds-blood-network.firebaseapp.com",
+            databaseURL: "https://bbds-blood-network-default-rtdb.firebaseio.com",
+            projectId: "bbds-blood-network",
+            storageBucket: "bbds-blood-network.firebasestorage.app",
+            messagingSenderId: "865903022296",
+            appId: "1:865903022296:web:5322b0370c68e049fc87ad"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // ==================== GLOBAL VARIABLES ====================
+        let allVolunteers = [];
+        let currentUserId = null;
+        let currentFilter = 'alltime';
+
+        // ==================== AUTH CHECK ====================
+        async function checkAuth() {
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (userId && (userRole === 'volunteer' || userRole === 'admin')) {
+                currentUserId = userId;
+                return true;
+            }
+            
+            return new Promise((resolve) => {
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        const snapshot = await database.ref('users/' + user.uid).once('value');
+                        const userData = snapshot.val();
+                        if (userData && (userData.role === 'volunteer' || userData.role === 'admin')) {
+                            currentUserId = user.uid;
+                            localStorage.setItem('userId', user.uid);
+                            localStorage.setItem('userRole', userData.role);
+                            resolve(true);
+                        } else {
+                            window.location.href = 'login.html';
+                            resolve(false);
+                        }
+                    } else {
+                        window.location.href = 'login.html';
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        // ==================== LOAD VOLUNTEERS (শুধুমাত্র ভলান্টিয়ার) ====================
+        async function loadVolunteers() {
+            try {
+                const snapshot = await database.ref('users').once('value');
+                const volunteers = [];
+                
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    const uid = child.key;
+                    if (user.role === 'volunteer' || user.role === 'admin') {
+                        volunteers.push({
+                            uid: uid,
+                            name: user.name || 'ভলান্টিয়ার',
+                            points: user.points || 0,
+                            avatarUrl: user.avatarUrl || '',
+                            stats: user.stats || { donorsAdded: 0, requestsAccepted: 0, donationUpdates: 0 }
+                        });
+                    }
+                });
+                
+                volunteers.sort((a, b) => b.points - a.points);
+                allVolunteers = volunteers;
+                
+                updateStats();
+                displayLeaderboard();
+                
+            } catch (error) {
+                console.error("Error loading volunteers:", error);
+                document.getElementById('leaderboardList').innerHTML = '<div class="empty-placeholder"><i class="fas fa-exclamation-triangle"></i><h3>লোড করতে সমস্যা হয়েছে</h3></div>';
+            }
+        }
+
+        // ==================== UPDATE STATS ====================
+        function updateStats() {
+            const total = allVolunteers.length;
+            const totalPoints = allVolunteers.reduce((sum, v) => sum + v.points, 0);
+            const avg = total > 0 ? Math.round(totalPoints / total) : 0;
+            
+            document.getElementById('totalVolunteers').textContent = total;
+            document.getElementById('totalPoints').textContent = totalPoints.toLocaleString();
+            document.getElementById('avgPoints').textContent = avg.toLocaleString();
+        }
+
+        // ==================== DISPLAY LEADERBOARD ====================
+        function displayLeaderboard() {
+            let filteredUsers = [...allVolunteers];
+            
+            if (currentFilter === 'weekly') {
+                filteredUsers = filteredUsers.slice(0, 10);
+            } else if (currentFilter === 'monthly') {
+                filteredUsers = filteredUsers.slice(0, 15);
+            }
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filteredUsers = filteredUsers.filter(user => 
+                    user.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            displayPodium(filteredUsers.slice(0, 3));
+            displayYourRank(filteredUsers);
+            displayList(filteredUsers);
+        }
+
+        // ==================== DISPLAY PODIUM ====================
+        function displayPodium(top3) {
+            const container = document.getElementById('podiumContainer');
+            if (top3.length === 0) {
+                container.innerHTML = '<div class="empty-placeholder"><i class="fas fa-trophy"></i><h3>কোনো ডাটা নেই</h3></div>';
+                return;
+            }
+            
+            const ordered = [top3[1], top3[0], top3[2]];
+            const orderedRanks = ['second', 'first', 'third'];
+            const orderedMedals = ['🥈', '🥇', '🥉'];
+            const orderedBadges = ['⭐', '👑', '🌟'];
+            
+            let html = '';
+            ordered.forEach((user, idx) => {
+                if (user) {
+                    const avatarUrl = user.avatarUrl && user.avatarUrl.startsWith('http') ? 
+                        user.avatarUrl : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=16a34a&color=fff`;
+                    
+                    html += `
+                        <div class="podium-card ${orderedRanks[idx]}">
+                            <div class="podium-rank">${orderedMedals[idx]}</div>
+                            <img src="${avatarUrl}" class="podium-avatar" alt="${user.name}">
+                            <div class="podium-name">${escapeHtml(user.name)}</div>
+                            <div class="podium-points">⭐ ${user.points.toLocaleString()}</div>
+                            <div class="podium-badge">${orderedBadges[idx]}</div>
+                        </div>
+                    `;
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        // ==================== DISPLAY YOUR RANK ====================
+        function displayYourRank(users) {
+            if (!currentUserId) {
+                document.getElementById('yourRankCard').style.display = 'none';
+                return;
+            }
+            
+            const index = users.findIndex(u => u.uid === currentUserId);
+            if (index === -1) {
+                document.getElementById('yourRankCard').style.display = 'none';
+                return;
+            }
+            
+            const rank = index + 1;
+            const user = users[index];
+            
+            let rankText = '';
+            let rankEmoji = '';
+            if (rank === 1) { rankText = '১ম স্থান!'; rankEmoji = '🥇'; }
+            else if (rank === 2) { rankText = '২য় স্থান!'; rankEmoji = '🥈'; }
+            else if (rank === 3) { rankText = '৩য় স্থান!'; rankEmoji = '🥉'; }
+            else { rankText = `${rank}তম স্থান`; rankEmoji = '🏆'; }
+            
+            let nextPointsNeeded = 0;
+            if (index > 0) {
+                nextPointsNeeded = users[index - 1].points - user.points;
+            }
+            
+            const card = document.getElementById('yourRankCard');
+            card.innerHTML = `
+                <div class="your-rank-left">
+                    <div class="your-rank-label">👤 আপনার অবস্থান</div>
+                    <div class="your-rank-value">${rankEmoji} ${rankText}</div>
+                    <div class="your-rank-points">⭐ ${user.points.toLocaleString()} পয়েন্ট</div>
+                    ${nextPointsNeeded > 0 ? `<div class="next-rank-info">আরও ${nextPointsNeeded} পয়েন্ট দরকার ${rank-1}তম হতে!</div>` : ''}
+                </div>
+                <div class="your-rank-right">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+            `;
+            card.style.display = 'flex';
+        }
+
+        // ==================== DISPLAY LEADERBOARD LIST ====================
+        function displayList(users) {
+            const container = document.getElementById('leaderboardList');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<div class="empty-placeholder"><i class="fas fa-users-slash"></i><h3>কোনো ভলান্টিয়ার নেই</h3></div>';
+                return;
+            }
+            
+            let html = '';
+            users.forEach((user, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                let rankDisplay = rank;
+                if (rank === 1) { rankClass = 'top-1'; rankDisplay = '🥇'; }
+                else if (rank === 2) { rankClass = 'top-2'; rankDisplay = '🥈'; }
+                else if (rank === 3) { rankClass = 'top-3'; rankDisplay = '🥉'; }
+                
+                const isCurrentUser = user.uid === currentUserId;
+                const avatarUrl = user.avatarUrl && user.avatarUrl.startsWith('http') ? 
+                    user.avatarUrl : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=16a34a&color=fff`;
+                const stats = user.stats;
+                
+                html += `
+                    <div class="leaderboard-item" onclick="showPointsBreakdown('${user.uid}', '${escapeHtml(user.name)}', ${user.points})">
+                        <div class="leaderboard-rank ${rankClass}">${rankDisplay}</div>
+                        <img src="${avatarUrl}" class="leaderboard-avatar" alt="${user.name}">
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">${escapeHtml(user.name)} ${isCurrentUser ? '(আপনি)' : ''}</div>
+                            <div class="leaderboard-stats">
+                                <span><i class="fas fa-user-plus"></i> ${stats.donorsAdded || 0}</span>
+                                <span><i class="fas fa-check-circle"></i> ${stats.requestsAccepted || 0}</span>
+                                <span><i class="fas fa-sync-alt"></i> ${stats.donationUpdates || 0}</span>
+                            </div>
+                        </div>
+                        <div class="leaderboard-points">
+                            <div class="points-value">${user.points.toLocaleString()}</div>
+                            <div class="points-label">পয়েন্ট</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ==================== POINTS BREAKDOWN MODAL ====================
+        async function showPointsBreakdown(uid, name, totalPoints) {
+            try {
+                const snapshot = await database.ref('users/' + uid).once('value');
+                const userData = snapshot.val();
+                const stats = userData?.stats || { donorsAdded: 0, requestsAccepted: 0, donationUpdates: 0, fbPublic: 0, fbPersonal: 0 };
+                
+                const donorPoints = (stats.donorsAdded || 0) * 5;
+                const requestPoints = (stats.requestsAccepted || 0) * 3;
+                const updatePoints = (stats.donationUpdates || 0) * 2;
+                const fbPublicPoints = (stats.fbPublic || 0) * 3;
+                const fbPersonalPoints = (stats.fbPersonal || 0) * 1;
+                const attendancePoints = (userData?.streak || 0) * 1;
+                
+                document.getElementById('modalUserName').textContent = `${name} - পয়েন্ট বিস্তারিত`;
+                document.getElementById('pointsBreakdown').innerHTML = `
+                    <div class="breakdown-item"><span class="breakdown-label"><i class="fas fa-user-plus"></i> ডোনার এড (+৫)</span><span class="breakdown-value">${stats.donorsAdded || 0} = ${donorPoints} পয়েন্ট</span></div>
+                    <div class="breakdown-item"><span class="breakdown-label"><i class="fas fa-check-circle"></i> রিকোয়েস্ট একসেপ্ট (+৩)</span><span class="breakdown-value">${stats.requestsAccepted || 0} = ${requestPoints} পয়েন্ট</span></div>
+                    <div class="breakdown-item"><span class="breakdown-label"><i class="fas fa-sync-alt"></i> ডোনেশন আপডেট (+২)</span><span class="breakdown-value">${stats.donationUpdates || 0} = ${updatePoints} পয়েন্ট</span></div>
+                    <div class="breakdown-item"><span class="breakdown-label"><i class="fab fa-facebook"></i> ফেসবুক পাবলিক (+৩)</span><span class="breakdown-value">${stats.fbPublic || 0} = ${fbPublicPoints} পয়েন্ট</span></div>
+                    <div class="breakdown-item"><span class="breakdown-label"><i class="fas fa-users"></i> ফেসবুক পার্সোনাল (+১)</span><span class="breakdown-value">${stats.fbPersonal || 0} = ${fbPersonalPoints} পয়েন্ট</span></div>
+                    <div class="breakdown-item"><span class="breakdown-label"><i class="fas fa-calendar-check"></i> হাজিরা (+১)</span><span class="breakdown-value">${userData?.streak || 0} = ${attendancePoints} পয়েন্ট</span></div>
+                `;
+                document.getElementById('totalPointsBreakdown').innerHTML = `
+                    <span>মোট পয়েন্ট</span>
+                    <span style="color: var(--accent); font-size: 20px;">${totalPoints.toLocaleString()}</span>
+                `;
+                document.getElementById('pointsModal').classList.add('active');
+            } catch (error) {
+                console.error("Error loading points breakdown:", error);
+            }
+        }
+
+        function closePointsModal() {
+            document.getElementById('pointsModal').classList.remove('active');
+        }
+
+        // ==================== FILTER & SEARCH ====================
+        function setFilter(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === type);
+            });
+            displayLeaderboard();
+        }
+
+        function handleSearch() {
+            displayLeaderboard();
+        }
+
+        // ==================== LOAD UNREAD COUNTS ====================
+        async function loadUnreadCounts() {
+            if (!currentUserId) return;
+            try {
+                const snapshot = await database.ref('chatRooms').once('value');
+                let chatUnread = 0, requestPending = 0;
+                snapshot.forEach(child => {
+                    const room = child.val();
+                    if (room.participants && room.participants[currentUserId]) {
+                        chatUnread += room.unreadCount?.[currentUserId] || 0;
+                    }
+                });
+                const reqSnapshot = await database.ref('bloodRequests').once('value');
+                reqSnapshot.forEach(child => { if (child.val().status === 'pending') requestPending++; });
+                const chatBadge = document.getElementById('bottomChatBadge');
+                const reqBadge = document.getElementById('bottomRequestBadge');
+                if (chatBadge) { chatBadge.textContent = chatUnread; chatBadge.style.display = chatUnread > 0 ? 'inline-flex' : 'none'; }
+                if (reqBadge) { reqBadge.textContent = requestPending; reqBadge.style.display = requestPending > 0 ? 'inline-flex' : 'none'; }
+            } catch (error) { console.error("Error loading unread counts:", error); }
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== SIDEBAR & THEME ====================
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const themeToggleSidebar = document.getElementById('themeToggleSidebar');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function toggleSidebar() {
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        async function logout() {
+            try {
+                if (currentUserId) {
+                    await database.ref('users/' + currentUserId).update({ online: false, lastSeen: Date.now() });
+                }
+                await auth.signOut();
+                localStorage.clear();
+                window.location.href = 'login.html';
+            } catch (error) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        if (menuBtn) menuBtn.addEventListener('click', toggleSidebar);
+        if (overlay) overlay.addEventListener('click', toggleSidebar);
+        if (themeToggleSidebar) themeToggleSidebar.addEventListener('click', toggleTheme);
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar?.classList.contains('open')) {
+                toggleSidebar();
+            }
+        });
+
+        // Make functions global
+        window.showPointsBreakdown = showPointsBreakdown;
+        window.closePointsModal = closePointsModal;
+        window.setFilter = setFilter;
+        window.handleSearch = handleSearch;
+
+        // ==================== EVENT LISTENERS ====================
+        document.getElementById('searchInput').addEventListener('input', handleSearch);
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+        });
+
+        // ==================== INITIALIZE ====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            await checkAuth();
+            await loadVolunteers();
+            await loadUnreadCounts();
+            
+            database.ref('users').on('value', () => {
+                loadVolunteers();
+                loadUnreadCounts();
+            });
+        });
+    </script>
+</body>
+</html>

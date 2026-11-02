@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Ready Donors - Volunteer Flow</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        /* Ready Donor Page Specific Styles */
+        .ready-donor-page {
+            padding: 0;
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            color: var(--accent);
+            background: var(--card-hover);
+            transform: translateX(-3px);
+        }
+
+        .back-btn i {
+            font-size: 14px;
+        }
+
+        /* Search Card */
+        .search-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 15px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+            background: var(--card);
+        }
+
+        .search-input::placeholder {
+            color: var(--muted);
+            opacity: 0.6;
+        }
+
+        .search-btn {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        .search-btn i {
+            font-size: 16px;
+        }
+
+        /* Filter Row */
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 160px;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        /* Division & District Group */
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            flex: 2;
+        }
+
+        @media (max-width: 700px) {
+            .search-box {
+                flex-direction: column;
+            }
+            .search-btn {
+                justify-content: center;
+            }
+            .filter-row {
+                flex-direction: column;
+            }
+            .filter-select {
+                width: 100%;
+            }
+            .filter-group {
+                flex-direction: column;
+                width: 100%;
+            }
+        }
+
+        /* Donor Count Badge */
+        .donor-count-badge {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 15px;
+            flex-wrap: wrap;
+        }
+
+        .donor-count-badge i {
+            font-size: 18px;
+        }
+
+        .donor-count-badge .available-count {
+            margin-left: auto;
+            font-size: 13px;
+            color: var(--fg);
+        }
+
+        /* Donor List */
+        .donor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Donor Card */
+        .donor-card {
+            background: var(--card);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .donor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--glow);
+        }
+
+        /* Status Badge (Corner) */
+        .donor-status-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .donor-status-badge.available {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .donor-status-badge.not-available {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .donor-status-badge i {
+            font-size: 10px;
+        }
+
+        .donor-card-inner {
+            padding: 16px;
+        }
+
+        .donor-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-right: 100px;
+            padding-left: 40px;
+        }
+
+        .donor-name {
+            font-weight: 700;
+            color: var(--fg);
+            font-size: 18px;
+        }
+
+        .blood-badge {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px var(--glow);
+        }
+
+        .donor-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .detail-item i {
+            width: 18px;
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .detail-item .last-donation-date {
+            font-weight: 500;
+            color: var(--fg);
+        }
+
+        .detail-item .next-eligible-date {
+            font-size: 11px;
+            color: var(--warning);
+            margin-left: 4px;
+        }
+
+        /* Note Section */
+        .donor-note {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .donor-note-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .donor-note-text {
+            font-size: 12px;
+            color: var(--fg);
+            line-height: 1.4;
+        }
+
+        /* Info message for not available donors */
+        .info-message {
+            background: var(--warning-light);
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--warning);
+        }
+
+        /* Call Button */
+        .call-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-family: 'Hind Siliguri', sans-serif;
+            border: none;
+        }
+
+        .call-btn.available {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+        }
+
+        .call-btn.available:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        .call-btn.not-available {
+            background: var(--bg-secondary);
+            color: var(--muted);
+            cursor: not-allowed;
+            border: 1px solid var(--border);
+        }
+
+        .call-btn i {
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .loading-placeholder {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .loading-placeholder i {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--card);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+        }
+
+        .header-inner {
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, var(--accent) 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .header-icon:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* جستجوی پیشرفته */
+        .advanced-filter {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .filter-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .division-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .division-chip {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .division-chip:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        .division-chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* ==================== এডিট বাটন (কার্ডের কর্নারে) ==================== */
+        .edit-corner-btn {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .edit-corner-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .donor-card {
+            cursor: pointer;
+        }
+
+        /* ==================== মডাল ওভারলে (কমন) ==================== */
+        .app-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .app-modal-overlay.open {
+            display: flex;
+        }
+
+        .app-modal-card {
+            background: var(--card);
+            width: 100%;
+            max-width: 480px;
+            max-height: 88vh;
+            overflow-y: auto;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -4px 25px var(--shadow);
+            animation: slideUp 0.25s ease;
+        }
+
+        @media (min-width: 700px) {
+            .app-modal-overlay {
+                align-items: center;
+            }
+            .app-modal-card {
+                border-radius: 20px;
+                margin: 20px;
+            }
+        }
+
+        .app-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .app-modal-header h3 {
+            font-size: 17px;
+            color: var(--fg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-modal-close {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--fg);
+        }
+
+        .detail-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .detail-row i {
+            width: 20px;
+            color: var(--accent);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 13px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: var(--bg-secondary);
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        .phone-choice-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: var(--fg);
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+
+        .phone-choice-btn:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .phone-choice-btn i {
+            color: var(--accent);
+        }
+
+        .edit-form-group {
+            margin-bottom: 14px;
+        }
+
+        .edit-form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--fg);
+        }
+
+        .edit-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 420px) {
+            .edit-form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .edit-input, .edit-select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            box-sizing: border-box;
+        }
+
+        .edit-input:focus, .edit-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        .edit-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">Volunteer Flow</div>
+            <div class="header-actions">
+                <button class="header-icon" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="ready-donor-page">
+            <!-- Back Button -->
+            <button class="back-btn" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i>
+                ড্যাশবোর্ডে ফিরুন
+            </button>
+
+            <!-- Search & Filter -->
+            <div class="search-card">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchInput" placeholder="নাম বা এলাকা সার্চ করুন...">
+                    <button class="search-btn" onclick="searchDonors()">
+                        <i class="fas fa-search"></i> খুঁজুন
+                    </button>
+                </div>
+
+                <!-- Filter Row - Main Filters -->
+                <div class="filter-row">
+                    <select class="filter-select" id="bloodFilter" onchange="filterDonors()">
+                        <option value="">সব ব্লাড গ্রুপ</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                    </select>
+                    <select class="filter-select" id="statusFilter" onchange="filterDonors()">
+                        <option value="">সব স্ট্যাটাস</option>
+                        <option value="available">🟢 উপলব্ধ</option>
+                        <option value="not-available">🔴 অনুপলব্ধ</option>
+                    </select>
+                </div>
+
+                <!-- Advanced Filter - Division & District -->
+                <div class="advanced-filter">
+                    <div class="filter-title">
+                        <i class="fas fa-map-marked-alt"></i> বিভাগ ও জেলা অনুসারে ফিল্টার
+                    </div>
+                    <div class="division-filter" id="divisionFilter">
+                        <div class="division-chip active" data-division="">সব বিভাগ</div>
+                        <div class="division-chip" data-division="ঢাকা">ঢাকা</div>
+                        <div class="division-chip" data-division="চট্টগ্রাম">চট্টগ্রাম</div>
+                        <div class="division-chip" data-division="রাজশাহী">রাজশাহী</div>
+                        <div class="division-chip" data-division="খুলনা">খুলনা</div>
+                        <div class="division-chip" data-division="বরিশাল">বরিশাল</div>
+                        <div class="division-chip" data-division="সিলেট">সিলেট</div>
+                        <div class="division-chip" data-division="রংপুর">রংপুর</div>
+                        <div class="division-chip" data-division="ময়মনসিংহ">ময়মনসিংহ</div>
+                    </div>
+                    <select class="filter-select" id="districtFilter" onchange="onDistrictFilterChange(this.value)" style="margin-top: 12px;">
+                        <option value="">সব জেলা</option>
+                    </select>
+                    <select class="filter-select" id="upazilaFilter" onchange="filterDonors()" style="margin-top: 12px;">
+                        <option value="">সব উপজেলা</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Donor Count -->
+            <div class="donor-count-badge" id="donorCount">
+                <i class="fas fa-users"></i>
+                মোট ডোনার: <span id="countValue">0</span>
+                <span class="available-count" id="availableCount"></span>
+            </div>
+
+            <!-- Donor List -->
+            <div class="donor-list" id="donorList">
+                <div class="loading-placeholder">
+                    <i class="fas fa-spinner fa-pulse"></i>
+                    ডোনার লোড হচ্ছে...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><i class="fas fa-bars"></i> মেনু</h3>
+        <div class="sidebar-item" onclick="window.location.href='home.html'">
+            <i class="fas fa-home"></i> <span>হোম</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html'">
+            <i class="fas fa-user"></i> <span>প্রোফাইল</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='settings.html'">
+            <i class="fas fa-cog"></i> <span>সেটিংস</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='our_team.html'">
+            <i class="fas fa-users"></i> <span>আমার দল</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='event.html'">
+            <i class="fas fa-calendar-alt"></i> <span>ইভেন্ট</span>
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html#activities'">
+            <i class="fas fa-tasks"></i> <span>আমার কার্যক্রম</span>
+        </div>
+        <div class="theme-toggle">
+            <span><i class="fas fa-moon"></i> ডার্ক মোড</span>
+            <button id="themeToggleSidebar"></button>
+        </div>
+        <div class="sidebar-item logout-item" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> <span>লগআউট</span>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- ==================== ফোন নাম্বার চয়েস মডাল ==================== -->
+    <div class="app-modal-overlay" id="phoneChoiceModal" onclick="if(event.target===this) closePhoneChoiceModal()">
+        <div class="app-modal-card">
+            <div class="app-modal-header">
+                <h3><i class="fas fa-phone-alt"></i> নাম্বার সিলেক্ট করুন</h3>
+                <button class="app-modal-close" onclick="closePhoneChoiceModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="phoneChoiceContent"></div>
+        </div>
+    </div>
+
+    <!-- ==================== ডোনার ডিটেইলস / এডিট মডাল ==================== -->
+    <div class="app-modal-overlay" id="donorDetailModal" onclick="if(event.target===this) closeDonorDetailModal()">
+        <div class="app-modal-card">
+            <div class="app-modal-header">
+                <h3><i class="fas fa-user"></i> ডোনার ডিটেইলস</h3>
+                <button class="app-modal-close" onclick="closeDonorDetailModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="donorDetailContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkbx3T_QrtgHWCfAv_6Tltc_W5YxrFH-Q",
+            authDomain: "bbds-blood-network.firebaseapp.com",
+            databaseURL: "https://bbds-blood-network-default-rtdb.firebaseio.com",
+            projectId: "bbds-blood-network",
+            storageBucket: "bbds-blood-network.firebasestorage.app",
+            messagingSenderId: "865903022296",
+            appId: "1:865903022296:web:5322b0370c68e049fc87ad"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const db = firebase.firestore();
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        let allDonors = [];
+        let currentUserId = null;
+
+        // ==================== বিভাগ > জেলা > উপজেলা তালিকা (সম্পূর্ণ) ====================
+        const bdGeoData = {
+    "ঢাকা": {
+        "ঢাকা": [
+            "ধামরাই",
+            "দোহার",
+            "কেরানীগঞ্জ",
+            "নবাবগঞ্জ",
+            "সাভার"
+        ],
+        "গাজীপুর": [
+            "গাজীপুর সদর",
+            "কালীগঞ্জ",
+            "কাপাসিয়া",
+            "শ্রীপুর",
+            "কালিয়াকৈর"
+        ],
+        "নারায়ণগঞ্জ": [
+            "নারায়ণগঞ্জ সদর",
+            "আড়াইহাজার",
+            "বন্দর",
+            "রূপগঞ্জ",
+            "সোনারগাঁও"
+        ],
+        "টাঙ্গাইল": [
+            "টাঙ্গাইল সদর",
+            "বাসাইল",
+            "ভুয়াপুর",
+            "দেলদুয়ার",
+            "ঘাটাইল",
+            "গোপালপুর",
+            "মধুপুর",
+            "মির্জাপুর",
+            "নাগরপুর",
+            "সখীপুর",
+            "ধনবাড়ী",
+            "কালিহাতী"
+        ],
+        "কিশোরগঞ্জ": [
+            "কিশোরগঞ্জ সদর",
+            "বাজিতপুর",
+            "ভৈরব",
+            "হোসেনপুর",
+            "ইটনা",
+            "করিমগঞ্জ",
+            "কটিয়াদী",
+            "কুলিয়ারচর",
+            "মিঠামইন",
+            "নিকলী",
+            "পাকুন্দিয়া",
+            "তাড়াইল",
+            "অষ্টগ্রাম"
+        ],
+        "মানিকগঞ্জ": [
+            "মানিকগঞ্জ সদর",
+            "দৌলতপুর",
+            "ঘিওর",
+            "হরিরামপুর",
+            "সাটুরিয়া",
+            "শিবালয়",
+            "সিংগাইর"
+        ],
+        "মুন্সীগঞ্জ": [
+            "মুন্সীগঞ্জ সদর",
+            "গজারিয়া",
+            "লৌহজং",
+            "শ্রীনগর",
+            "সিরাজদিখান",
+            "টঙ্গিবাড়ী"
+        ],
+        "নরসিংদী": [
+            "নরসিংদী সদর",
+            "বেলাবো",
+            "মনোহরদী",
+            "পলাশ",
+            "রায়পুরা",
+            "শিবপুর"
+        ],
+        "ফরিদপুর": [
+            "ফরিদপুর সদর",
+            "আলফাডাঙ্গা",
+            "বোয়ালমারী",
+            "ভাঙ্গা",
+            "চরভদ্রাসন",
+            "মধুখালী",
+            "নগরকান্দা",
+            "সদরপুর",
+            "সালথা"
+        ],
+        "গোপালগঞ্জ": [
+            "গোপালগঞ্জ সদর",
+            "কাশিয়ানী",
+            "কোটালীপাড়া",
+            "মুকসুদপুর",
+            "টুংগীপাড়া"
+        ],
+        "মাদারীপুর": [
+            "মাদারীপুর সদর",
+            "কালকিনি",
+            "রাজৈর",
+            "শিবচর",
+            "ডাসার"
+        ],
+        "রাজবাড়ী": [
+            "রাজবাড়ী সদর",
+            "বালিয়াকান্দি",
+            "গোয়ালন্দ",
+            "পাংশা",
+            "কালুখালী"
+        ],
+        "শরীয়তপুর": [
+            "পালং (সদর)",
+            "ভেদরগঞ্জ",
+            "ডামুড্যা",
+            "গোসাইরহাট",
+            "নড়িয়া",
+            "জাজিরা"
+        ]
+    },
+    "ময়মনসিংহ": {
+        "ময়মনসিংহ": [
+            "ময়মনসিংহ সদর",
+            "ভালুকা",
+            "ত্রিশাল",
+            "মুক্তাগাছা",
+            "ফুলবাড়িয়া",
+            "গফরগাঁও",
+            "গৌরীপুর",
+            "ঈশ্বরগঞ্জ",
+            "নান্দাইল",
+            "ফুলপুর",
+            "হালুয়াঘাট",
+            "ধোবাউড়া",
+            "তারাকান্দা"
+        ],
+        "জামালপুর": [
+            "জামালপুর সদর",
+            "দেওয়ানগঞ্জ",
+            "ইসলামপুর",
+            "মাদারগঞ্জ",
+            "মেলান্দহ",
+            "সরিষাবাড়ী",
+            "বকশীগঞ্জ"
+        ],
+        "শেরপুর": [
+            "শেরপুর সদর",
+            "নালিতাবাড়ী",
+            "নকলা",
+            "ঝিনাইগাতী",
+            "শ্রীবরদী"
+        ],
+        "নেত্রকোণা": [
+            "নেত্রকোণা সদর",
+            "আটপাড়া",
+            "বারহাট্টা",
+            "দুর্গাপুর",
+            "কলমাকান্দা",
+            "কেন্দুয়া",
+            "খালিয়াজুরী",
+            "মদন",
+            "মোহনগঞ্জ",
+            "পূর্বধলা"
+        ]
+    },
+    "চট্টগ্রাম": {
+        "চট্টগ্রাম": [
+            "চট্টগ্রাম সদর",
+            "আনোয়ারা",
+            "বাঁশখালী",
+            "বোয়ালখালী",
+            "চন্দনাইশ",
+            "ফটিকছড়ি",
+            "হাটহাজারী",
+            "লোহাগাড়া",
+            "মিরসরাই",
+            "পটিয়া",
+            "রাঙ্গুনিয়া",
+            "রাউজান",
+            "সাতকানিয়া",
+            "সীতাকুণ্ড",
+            "সন্দ্বীপ"
+        ],
+        "কক্সবাজার": [
+            "কক্সবাজার সদর",
+            "চকরিয়া",
+            "কুতুবদিয়া",
+            "মহেশখালী",
+            "রামু",
+            "টেকনাফ",
+            "উখিয়া",
+            "পেকুয়া"
+        ],
+        "রাঙ্গামাটি": [
+            "রাঙ্গামাটি সদর",
+            "বাঘাইছড়ি",
+            "বরকল",
+            "বিলাইছড়ি",
+            "জুরাছড়ি",
+            "কাউখালী",
+            "কাপ্তাই",
+            "লংগদু",
+            "নানিয়ারচর",
+            "রাজস্থলী"
+        ],
+        "খাগড়াছড়ি": [
+            "খাগড়াছড়ি সদর",
+            "দিঘীনালা",
+            "লক্ষ্মীছড়ি",
+            "মহালছড়ি",
+            "মানিকছড়ি",
+            "মাটিরাঙ্গা",
+            "পানছড়ি",
+            "রামগড়",
+            "গুইমারা"
+        ],
+        "বান্দরবান": [
+            "বান্দরবান সদর",
+            "আলীকদম",
+            "লামা",
+            "নাইক্ষ্যংছড়ি",
+            "রুমা",
+            "রোয়াংছড়ি",
+            "থানচি"
+        ],
+        "কুমিল্লা": [
+            "কুমিল্লা সদর",
+            "সদর দক্ষিণ",
+            "বরুড়া",
+            "ব্রাহ্মণপাড়া",
+            "বুড়িচং",
+            "চান্দিনা",
+            "চৌদ্দগ্রাম",
+            "দাউদকান্দি",
+            "দেবিদ্বার",
+            "হোমনা",
+            "লাকসাম",
+            "লালমাই",
+            "মেঘনা",
+            "মুরাদনগর",
+            "নাঙ্গলকোট",
+            "তিতাস"
+        ],
+        "ব্রাহ্মণবাড়িয়া": [
+            "ব্রাহ্মণবাড়িয়া সদর",
+            "আশুগঞ্জ",
+            "আখাউড়া",
+            "বাঞ্ছারামপুর",
+            "বিজয়নগর",
+            "কসবা",
+            "নবীনগর",
+            "নাসিরনগর",
+            "সরাইল"
+        ],
+        "চাঁদপুর": [
+            "চাঁদপুর সদর",
+            "ফরিদগঞ্জ",
+            "হাইমচর",
+            "হাজীগঞ্জ",
+            "কচুয়া",
+            "মতলব উত্তর",
+            "মতলব দক্ষিণ",
+            "শাহরাস্তি"
+        ],
+        "লক্ষ্মীপুর": [
+            "লক্ষ্মীপুর সদর",
+            "কমলনগর",
+            "রামগঞ্জ",
+            "রায়পুর",
+            "রামগতি"
+        ],
+        "নোয়াখালী": [
+            "নোয়াখালী সদর",
+            "বেগমগঞ্জ",
+            "চাটখিল",
+            "কোম্পানীগঞ্জ",
+            "হাতিয়া",
+            "কবিরহাট",
+            "সেনবাগ",
+            "সোনাইমুড়ী",
+            "সুবর্ণচর"
+        ],
+        "ফেনী": [
+            "ফেনী সদর",
+            "ছাগলনাইয়া",
+            "দাগনভূঞা",
+            "ফুলগাজী",
+            "পরশুরাম",
+            "সোনাগাজী"
+        ]
+    },
+    "সিলেট": {
+        "সিলেট": [
+            "সিলেট সদর",
+            "বিয়ানীবাজার",
+            "বিশ্বনাথ",
+            "কোম্পানীগঞ্জ",
+            "ফেঞ্চুগঞ্জ",
+            "গোলাপগঞ্জ",
+            "গোয়াইনঘাট",
+            "জৈন্তাপুর",
+            "কানাইঘাট",
+            "জকিগঞ্জ",
+            "ওসমানীনগর",
+            "দক্ষিণ সুরমা",
+            "বালাগঞ্জ"
+        ],
+        "মৌলভীবাজার": [
+            "মৌলভীবাজার সদর",
+            "কমলগঞ্জ",
+            "কুলাউড়া",
+            "জুড়ী",
+            "বড়লেখা",
+            "রাজনগর",
+            "শ্রীমঙ্গল"
+        ],
+        "হবিগঞ্জ": [
+            "হবিগঞ্জ সদর",
+            "আজমিরীগঞ্জ",
+            "বাহুবল",
+            "বানিয়াচং",
+            "চুনারুঘাট",
+            "লাখাই",
+            "মাধবপুর",
+            "নবীগঞ্জ",
+            "শায়েস্তাগঞ্জ"
+        ],
+        "সুনামগঞ্জ": [
+            "সুনামগঞ্জ সদর",
+            "বিশ্বম্ভরপুর",
+            "ছাতক",
+            "দিরাই",
+            "দোয়ারাবাজার",
+            "ধর্মপাশা",
+            "জগন্নাথপুর",
+            "জামালগঞ্জ",
+            "শাল্লা",
+            "তাহিরপুর",
+            "দক্ষিণ সুনামগঞ্জ"
+        ]
+    },
+    "রাজশাহী": {
+        "রাজশাহী": [
+            "রাজশাহী সদর",
+            "বাগমারা",
+            "বাঘা",
+            "চারঘাট",
+            "দুর্গাপুর",
+            "গোদাগাড়ী",
+            "মোহনপুর",
+            "পবা",
+            "পুঠিয়া",
+            "তানোর"
+        ],
+        "নওগাঁ": [
+            "নওগাঁ সদর",
+            "আত্রাই",
+            "বদলগাছী",
+            "ধামইরহাট",
+            "মহাদেবপুর",
+            "মান্দা",
+            "নিয়ামতপুর",
+            "পত্নীতলা",
+            "পোরশা",
+            "রানীনগর",
+            "সাপাহার"
+        ],
+        "নাটোর": [
+            "নাটোর সদর",
+            "বাগাতিপাড়া",
+            "বড়াইগ্রাম",
+            "গুরুদাসপুর",
+            "লালপুর",
+            "নলডাঙ্গা",
+            "সিংড়া"
+        ],
+        "চাঁপাইনবাবগঞ্জ": [
+            "চাঁপাইনবাবগঞ্জ সদর",
+            "ভোলাহাট",
+            "গোমস্তাপুর",
+            "নাচোল",
+            "শিবগঞ্জ"
+        ],
+        "পাবনা": [
+            "পাবনা সদর",
+            "আটঘরিয়া",
+            "বেড়া",
+            "ভাঙ্গুড়া",
+            "চাটমোহর",
+            "ফরিদপুর",
+            "ঈশ্বরদী",
+            "সাঁথিয়া",
+            "সুজানগর"
+        ],
+        "সিরাজগঞ্জ": [
+            "সিরাজগঞ্জ সদর",
+            "বেলকুচি",
+            "চৌহালী",
+            "কামারখন্দ",
+            "কাজিপুর",
+            "রায়গঞ্জ",
+            "শাহজাদপুর",
+            "তাড়াশ",
+            "উল্লাপাড়া"
+        ],
+        "বগুড়া": [
+            "বগুড়া সদর",
+            "আদমদীঘি",
+            "দুপচাঁচিয়া",
+            "গাবতলী",
+            "কাহালু",
+            "নন্দীগ্রাম",
+            "সারিয়াকান্দি",
+            "শাজাহানপুর",
+            "শেরপুর",
+            "শিবগঞ্জ",
+            "সোনাতলা",
+            "ধুনট"
+        ],
+        "জয়পুরহাট": [
+            "জয়পুরহাট সদর",
+            "আক্কেলপুর",
+            "কালাই",
+            "ক্ষেতলাল",
+            "পাঁচবিবি"
+        ]
+    },
+    "রংপুর": {
+        "রংপুর": [
+            "রংপুর সদর",
+            "বদরগঞ্জ",
+            "গঙ্গাচড়া",
+            "কাউনিয়া",
+            "মিঠাপুকুর",
+            "পীরগঞ্জ",
+            "পীরগাছা",
+            "তারাগঞ্জ"
+        ],
+        "দিনাজপুর": [
+            "দিনাজপুর সদর",
+            "বিরল",
+            "বিরামপুর",
+            "বিরগঞ্জ",
+            "বোচাগঞ্জ",
+            "চিরিরবন্দর",
+            "ফুলবাড়ী",
+            "ঘোড়াঘাট",
+            "হাকিমপুর",
+            "কাহারোল",
+            "খানসামা",
+            "নবাবগঞ্জ",
+            "পার্বতীপুর"
+        ],
+        "কুড়িগ্রাম": [
+            "কুড়িগ্রাম সদর",
+            "ভুরুঙ্গামারী",
+            "চর রাজিবপুর",
+            "চিলমারী",
+            "ফুলবাড়ী",
+            "নাগেশ্বরী",
+            "রাজারহাট",
+            "রৌমারী",
+            "উলিপুর"
+        ],
+        "গাইবান্ধা": [
+            "গাইবান্ধা সদর",
+            "ফুলছড়ি",
+            "গোবিন্দগঞ্জ",
+            "পলাশবাড়ী",
+            "সাদুল্লাপুর",
+            "সাঘাটা",
+            "সুন্দরগঞ্জ"
+        ],
+        "লালমনিরহাট": [
+            "লালমনিরহাট সদর",
+            "আদিতমারী",
+            "কালীগঞ্জ",
+            "হাতীবান্ধা",
+            "পাটগ্রাম"
+        ],
+        "নীলফামারী": [
+            "নীলফামারী সদর",
+            "ডোমার",
+            "ডিমলা",
+            "জলঢাকা",
+            "কিশোরগঞ্জ",
+            "সৈয়দপুর"
+        ],
+        "পঞ্চগড়": [
+            "পঞ্চগড় সদর",
+            "আটোয়ারী",
+            "বোদা",
+            "দেবীগঞ্জ",
+            "তেঁতুলিয়া"
+        ],
+        "ঠাকুরগাঁও": [
+            "ঠাকুরগাঁও সদর",
+            "বালিয়াডাঙ্গী",
+            "হরিপুর",
+            "পীরগঞ্জ",
+            "রাণীশংকৈল"
+        ]
+    },
+    "খুলনা": {
+        "খুলনা": [
+            "খুলনা সদর",
+            "বটিয়াঘাটা",
+            "দাকোপ",
+            "দিঘলিয়া",
+            "ডুমুরিয়া",
+            "কয়রা",
+            "পাইকগাছা",
+            "ফুলতলা",
+            "রূপসা",
+            "তেরখাদা"
+        ],
+        "বাগেরহাট": [
+            "বাগেরহাট সদর",
+            "চিতলমারী",
+            "ফকিরহাট",
+            "কচুয়া",
+            "মংলা",
+            "মোরেলগঞ্জ",
+            "রামপাল",
+            "শরণখোলা",
+            "মোল্লাহাট"
+        ],
+        "চুয়াডাঙ্গা": [
+            "চুয়াডাঙ্গা সদর",
+            "আলমডাঙ্গা",
+            "দামুড়হুদা",
+            "জীবননগর"
+        ],
+        "যশোর": [
+            "যশোর সদর",
+            "অভয়নগর",
+            "বাঘারপাড়া",
+            "চৌগাছা",
+            "ঝিকরগাছা",
+            "কেশবপুর",
+            "মণিরামপুর",
+            "শার্শা"
+        ],
+        "ঝিনাইদহ": [
+            "ঝিনাইদহ সদর",
+            "হরিণাকুন্ডু",
+            "কালীগঞ্জ",
+            "কোটচাঁদপুর",
+            "মহেশপুর",
+            "শৈলকুপা"
+        ],
+        "কুষ্টিয়া": [
+            "কুষ্টিয়া সদর",
+            "ভেড়ামারা",
+            "দৌলতপুর",
+            "খোকসা",
+            "কুমারখালী",
+            "মিরপুর"
+        ],
+        "মাগুরা": [
+            "মাগুরা সদর",
+            "মহম্মদপুর",
+            "শালিখা",
+            "শ্রীপুর"
+        ],
+        "মেহেরপুর": [
+            "মেহেরপুর সদর",
+            "গাংনী",
+            "মুজিবনগর"
+        ],
+        "নড়াইল": [
+            "নড়াইল সদর",
+            "কালিয়া",
+            "লোহাগড়া"
+        ],
+        "সাতক্ষীরা": [
+            "সাতক্ষীরা সদর",
+            "আশাশুনি",
+            "দেবহাটা",
+            "কালিগঞ্জ",
+            "কলারোয়া",
+            "শ্যামনগর",
+            "তালা"
+        ]
+    },
+    "বরিশাল": {
+        "বরিশাল": [
+            "বরিশাল সদর",
+            "আগৈলঝাড়া",
+            "বাবুগঞ্জ",
+            "বাকেরগঞ্জ",
+            "বানারীপাড়া",
+            "গৌরনদী",
+            "হিজলা",
+            "মেহেন্দিগঞ্জ",
+            "মুলাদী",
+            "উজিরপুর"
+        ],
+        "বরগুনা": [
+            "বরগুনা সদর",
+            "আমতলী",
+            "বামনা",
+            "বেতাগী",
+            "পাথরঘাটা",
+            "তালতলী"
+        ],
+        "ভোলা": [
+            "ভোলা সদর",
+            "বোরহানউদ্দিন",
+            "চরফ্যাশন",
+            "দৌলতখান",
+            "লালমোহন",
+            "মনপুরা",
+            "তজুমুদ্দিন"
+        ],
+        "ঝালকাঠি": [
+            "ঝালকাঠি সদর",
+            "কাঁঠালিয়া",
+            "নলছিটি",
+            "রাজাপুর"
+        ],
+        "পটুয়াখালী": [
+            "পটুয়াখালী সদর",
+            "বাউফল",
+            "দশমিনা",
+            "দুমকি",
+            "গলাচিপা",
+            "কলাপাড়া",
+            "মির্জাগঞ্জ",
+            "রাঙ্গাবালী"
+        ],
+        "পিরোজপুর": [
+            "পিরোজপুর সদর",
+            "ভান্ডারিয়া",
+            "কাউখালী",
+            "মঠবাড়িয়া",
+            "নাজিরপুর",
+            "নেছারাবাদ",
+            "জিয়ানগর"
+        ]
+    }
+};
+
+        // পুরনো কাঠামোর সাথে সঙ্গতির জন্য (বিভাগ -> জেলা তালিকা)
+        const bangladeshDistricts = {};
+        Object.keys(bdGeoData).forEach(div => {
+            bangladeshDistricts[div] = Object.keys(bdGeoData[div]);
+        });
+
+        // ==================== AUTH CHECK ====================
+        async function checkAuth() {
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (userId && (userRole === 'volunteer' || userRole === 'admin')) {
+                currentUserId = userId;
+                return true;
+            }
+            
+            return new Promise((resolve) => {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        localStorage.setItem('userId', user.uid);
+                        resolve(true);
+                    } else {
+                        window.location.href = 'login.html';
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        // ==================== POPULATE DISTRICT DROPDOWN ====================
+        function populateDistrictDropdown(division = "") {
+            const districtSelect = document.getElementById('districtFilter');
+            if (!districtSelect) return;
+            
+            districtSelect.innerHTML = '<option value="">সব জেলা</option>';
+            
+            let districts = [];
+            if (division && bangladeshDistricts[division]) {
+                districts = bangladeshDistricts[division];
+            } else {
+                // সব বিভাগের সব জেলা
+                for (const div in bangladeshDistricts) {
+                    districts = [...districts, ...bangladeshDistricts[div]];
+                }
+            }
+            
+            districts.sort().forEach(district => {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                districtSelect.appendChild(option);
+            });
+
+            populateUpazilaDropdown("", division);
+        }
+
+        // ==================== POPULATE UPAZILA DROPDOWN (ফিল্টার) ====================
+        function populateUpazilaDropdown(district = "", division = "") {
+            const upazilaSelect = document.getElementById('upazilaFilter');
+            if (!upazilaSelect) return;
+
+            upazilaSelect.innerHTML = '<option value="">সব উপজেলা</option>';
+
+            let upazilas = [];
+            if (district) {
+                // নির্দিষ্ট জেলার উপজেলা খুঁজে বের করা (বিভাগ জানা না থাকলেও)
+                for (const div in bdGeoData) {
+                    if (bdGeoData[div][district]) {
+                        upazilas = bdGeoData[div][district];
+                        break;
+                    }
+                }
+            } else if (division && bdGeoData[division]) {
+                // ঐ বিভাগের সব জেলার সব উপজেলা
+                Object.values(bdGeoData[division]).forEach(list => {
+                    upazilas = [...upazilas, ...list];
+                });
+            } else {
+                // সব বিভাগ, সব জেলার সব উপজেলা
+                Object.values(bdGeoData).forEach(districtMap => {
+                    Object.values(districtMap).forEach(list => {
+                        upazilas = [...upazilas, ...list];
+                    });
+                });
+            }
+
+            [...new Set(upazilas)].sort().forEach(u => {
+                const option = document.createElement('option');
+                option.value = u;
+                option.textContent = u;
+                upazilaSelect.appendChild(option);
+            });
+        }
+
+        // ==================== জেলা ফিল্টার পরিবর্তন হ্যান্ডলার ====================
+        function onDistrictFilterChange(districtValue) {
+            const activeDivisionChip = document.querySelector('.division-chip.active');
+            const division = activeDivisionChip ? activeDivisionChip.getAttribute('data-division') : "";
+            populateUpazilaDropdown(districtValue, division);
+            filterDonors();
+        }
+
+        // ==================== DIVISION CHIP CLICK HANDLER ====================
+        function setupDivisionChips() {
+            const chips = document.querySelectorAll('.division-chip');
+            chips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    chips.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const division = this.getAttribute('data-division');
+                    populateDistrictDropdown(division);
+                    filterDonors();
+                });
+            });
+        }
+
+        // ==================== CHECK DONOR AVAILABILITY ====================
+        function checkDonorAvailability(lastDonationDate) {
+            if (!lastDonationDate) {
+                return { available: true, nextEligibleDate: null, daysLeft: 0 };
+            }
+            
+            const lastDonation = new Date(lastDonationDate);
+            const threeMonthsLater = new Date(lastDonation);
+            threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const isAvailable = today >= threeMonthsLater;
+            
+            let daysLeft = 0;
+            if (!isAvailable) {
+                const diffTime = threeMonthsLater - today;
+                daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+            
+            const formatDate = (date) => {
+                const d = new Date(date);
+                const day = d.getDate();
+                const month = d.toLocaleString('bn-BD', { month: 'short' });
+                return `${day} ${month}`;
+            };
+            
+            return {
+                available: isAvailable,
+                nextEligibleDate: threeMonthsLater,
+                nextEligibleDateFormatted: formatDate(threeMonthsLater),
+                daysLeft: daysLeft
+            };
+        }
+
+        // ==================== LOAD DONORS ====================
+        async function loadDonors() {
+            try {
+                const querySnapshot = await db.collection('donors').orderBy('timestamp', 'desc').get();
+                allDonors = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                displayDonors(allDonors);
+            } catch (error) {
+                console.error("Error loading donors:", error);
+                document.getElementById('donorList').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>ডোনার লোড করতে সমস্যা হয়েছে</h3>
+                        <p>ইন্টারনেট কানেকশন চেক করুন</p>
+                    </div>`;
+            }
+        }
+
+        // ==================== DISPLAY DONORS (WITH NOTES) ====================
+        function displayDonors(donors) {
+            const donorList = document.getElementById('donorList');
+            const countValue = document.getElementById('countValue');
+            const availableCountSpan = document.getElementById('availableCount');
+            
+            // Calculate available count
+            let availableCount = 0;
+            donors.forEach(donor => {
+                const status = checkDonorAvailability(donor.lastDonation);
+                if (status.available) availableCount++;
+            });
+            
+            if (countValue) countValue.textContent = donors.length;
+            if (availableCountSpan) {
+                availableCountSpan.innerHTML = `<i class="fas fa-check-circle"></i> উপলব্ধ: ${availableCount}`;
+            }
+
+            if (donors.length === 0) {
+                donorList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>কোন ডোনার খুঁজে পাওয়া যায়নি</h3>
+                        <p>অন্য ফিল্টার চেষ্টা করুন</p>
+                    </div>`;
+                return;
+            }
+
+            donorList.innerHTML = donors.map(donor => {
+                const availability = checkDonorAvailability(donor.lastDonation);
+                const isAvailable = availability.available;
+                
+                // Format last donation for display
+                let lastDonationDisplay = 'রেকর্ড নেই';
+                if (donor.lastDonation) {
+                    const date = new Date(donor.lastDonation);
+                    lastDonationDisplay = `${date.getDate()} ${date.toLocaleString('bn-BD', { month: 'short' })} ${date.getFullYear()}`;
+                }
+                
+                // Note HTML (if exists)
+                let noteHtml = '';
+                if (donor.note && donor.note.trim()) {
+                    noteHtml = `
+                        <div class="donor-note">
+                            <div class="donor-note-header">
+                                <i class="fas fa-sticky-note"></i> নোট
+                            </div>
+                            <div class="donor-note-text">${escapeHtml(donor.note)}</div>
+                        </div>
+                    `;
+                }
+                
+                const locationLine = [donor.upazila, donor.district].filter(Boolean).join(', ') || 'লোকেশন নেই';
+
+                return `
+                <div class="donor-card" onclick="openDonorDetailModal('${donor.id}')">
+                    <div class="edit-corner-btn" onclick="event.stopPropagation(); openDonorDetailModal('${donor.id}', true)">
+                        <i class="fas fa-pen"></i>
+                    </div>
+                    <div class="donor-status-badge ${isAvailable ? 'available' : 'not-available'}">
+                        <i class="fas ${isAvailable ? 'fa-check-circle' : 'fa-ban'}"></i>
+                        ${isAvailable ? 'উপলব্ধ' : 'অনুপলব্ধ'}
+                    </div>
+                    <div class="donor-card-inner">
+                        <div class="donor-top">
+                            <div class="donor-name">${escapeHtml(donor.fullName || 'নাম নেই')}</div>
+                            <div class="blood-badge">${donor.bloodGroup || '?'}</div>
+                        </div>
+                        <div class="donor-details">
+                            <div class="detail-item">
+                                <i class="fas fa-phone-alt"></i>
+                                <span>${donor.phone || 'নাই'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${escapeHtml(locationLine)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-location-dot"></i>
+                                <span>${escapeHtml(donor.area || 'এলাকা নাই')}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="last-donation-date">শেষ দান: ${lastDonationDisplay}</span>
+                                ${!isAvailable && availability.daysLeft > 0 ? `
+                                    <span class="next-eligible-date">
+                                        (যোগ্য: ${availability.nextEligibleDateFormatted})
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ${noteHtml}
+                        ${!isAvailable && availability.daysLeft > 0 ? `
+                            <div class="info-message">
+                                <i class="fas fa-hourglass-half"></i> আরও ${availability.daysLeft} দিন পর রক্ত দিতে পারবেন
+                            </div>
+                        ` : ''}
+                        <button class="call-btn ${isAvailable ? 'available' : 'not-available'}" 
+                                onclick="event.stopPropagation(); ${isAvailable ? `handleCallClick('${donor.id}')` : 'return false;'}"
+                                ${!isAvailable ? 'disabled' : ''}>
+                            <i class="fas fa-phone-alt"></i>
+                            ${isAvailable ? 'কল করুন' : 'এখনই কল করা যাবে না'}
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ==================== হালকা বানান ভুল সহনশীল (ফাজি) সার্চ ====================
+        function levenshteinDistance(a, b) {
+            if (a === b) return 0;
+            const al = a.length, bl = b.length;
+            if (al === 0) return bl;
+            if (bl === 0) return al;
+            let prevRow = Array.from({ length: bl + 1 }, (_, i) => i);
+            for (let i = 1; i <= al; i++) {
+                const currRow = [i];
+                for (let j = 1; j <= bl; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    currRow[j] = Math.min(
+                        prevRow[j] + 1,      // deletion
+                        currRow[j - 1] + 1,  // insertion
+                        prevRow[j - 1] + cost // substitution
+                    );
+                }
+                prevRow = currRow;
+            }
+            return prevRow[bl];
+        }
+
+        function fuzzyTextMatch(source, query) {
+            if (!query) return true;
+            if (!source) return false;
+            source = source.toLowerCase().trim();
+            query = query.toLowerCase().trim();
+            if (!query) return true;
+            if (source.includes(query)) return true;
+
+            // অনুমোদিত ভুলের সীমা query'র দৈর্ঘ্যের উপর নির্ভর করে
+            const maxDistance = query.length <= 3 ? 1 : (query.length <= 7 ? 2 : 3);
+
+            // পুরো টেক্সটের সাথে তুলনা
+            if (levenshteinDistance(source, query) <= maxDistance) return true;
+
+            // প্রতিটি শব্দের সাথে আলাদাভাবে তুলনা (যেমন এলাকার বিস্তারিত ঠিকানায় একাধিক শব্দ থাকতে পারে)
+            const words = source.split(/[\s,،]+/).filter(Boolean);
+            for (const word of words) {
+                if (word.includes(query) || levenshteinDistance(word, query) <= maxDistance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // ==================== SEARCH & FILTER ====================
+        function searchDonors() {
+            const text = document.getElementById("searchInput").value.toLowerCase().trim();
+            const blood = document.getElementById("bloodFilter").value;
+            const status = document.getElementById("statusFilter").value;
+            const district = document.getElementById("districtFilter").value;
+            const upazila = document.getElementById("upazilaFilter")?.value || "";
+            const activeDivisionChip = document.querySelector('.division-chip.active');
+            const division = activeDivisionChip ? activeDivisionChip.getAttribute('data-division') : "";
+
+            let results = allDonors.filter(donor => {
+                const matchesText = !text ||
+                    fuzzyTextMatch(donor.fullName, text) ||
+                    fuzzyTextMatch(donor.area, text) ||
+                    fuzzyTextMatch(donor.district, text) ||
+                    fuzzyTextMatch(donor.upazila, text) ||
+                    fuzzyTextMatch(donor.division, text);
+
+                const matchesBlood = !blood || donor.bloodGroup === blood;
+                const matchesDivision = !division || donor.division === division;
+                const matchesDistrict = !district || donor.district === district;
+                const matchesUpazila = !upazila || donor.upazila === upazila;
+
+                let matchesStatus = true;
+                if (status) {
+                    const availability = checkDonorAvailability(donor.lastDonation);
+                    if (status === 'available') matchesStatus = availability.available;
+                    if (status === 'not-available') matchesStatus = !availability.available;
+                }
+
+                return matchesText && matchesBlood && matchesDivision && matchesDistrict && matchesUpazila && matchesStatus;
+            });
+
+            displayDonors(results);
+        }
+
+        function filterDonors() {
+            searchDonors();
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== ফোন নাম্বার নরমালাইজ (এডিট ডুপ্লিকেট চেকের জন্য) ====================
+        function normalizePhoneNumber(phone) {
+            if (!phone) return null;
+            let clean = phone.replace(/\D/g, '');
+            if (clean.startsWith('880')) {
+                clean = '0' + clean.substring(3);
+            } else if (clean.startsWith('1') && clean.length === 10) {
+                clean = '0' + clean;
+            } else if (!clean.startsWith('01') || clean.length !== 11) {
+                return null;
+            }
+            const regex = /^01[3-9]\d{8}$/;
+            return regex.test(clean) ? clean : null;
+        }
+
+        // ==================== ডুপ্লিকেট চেক (এডিটের সময়, নিজেকে বাদ দিয়ে) ====================
+        async function checkDuplicateDonorExcluding(phoneNumber, excludeDonorId) {
+            try {
+                const normalizedPhone = normalizePhoneNumber(phoneNumber);
+                if (!normalizedPhone) return false;
+
+                const donorsRef = db.collection('donors');
+                const [snap1, snap2] = await Promise.all([
+                    donorsRef.where('phone', '==', normalizedPhone).get(),
+                    donorsRef.where('phone2', '==', normalizedPhone).get()
+                ]);
+
+                const conflict = [...snap1.docs, ...snap2.docs].some(doc => doc.id !== excludeDonorId);
+                return conflict;
+            } catch (error) {
+                console.error("Error checking duplicate:", error);
+                return false;
+            }
+        }
+
+        // ==================== কল বাটন হ্যান্ডলার (দুইটি নাম্বার থাকলে চয়েস দেখাবে) ====================
+        function handleCallClick(donorId) {
+            const donor = allDonors.find(d => d.id === donorId);
+            if (!donor) return;
+
+            const availability = checkDonorAvailability(donor.lastDonation);
+            if (!availability.available) return;
+
+            if (donor.phone2 && donor.phone2.trim()) {
+                openPhoneChoiceModal(donor);
+            } else if (donor.phone) {
+                window.open('tel:' + donor.phone);
+            }
+        }
+
+        function openPhoneChoiceModal(donor) {
+            const content = document.getElementById('phoneChoiceContent');
+            content.innerHTML = `
+                <button class="phone-choice-btn" onclick="window.open('tel:${donor.phone}'); closePhoneChoiceModal();">
+                    <span><i class="fas fa-phone-alt"></i> নাম্বার ১: ${donor.phone}</span>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="phone-choice-btn" onclick="window.open('tel:${donor.phone2}'); closePhoneChoiceModal();">
+                    <span><i class="fas fa-phone-alt"></i> নাম্বার ২: ${donor.phone2}</span>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+            document.getElementById('phoneChoiceModal').classList.add('open');
+        }
+
+        function closePhoneChoiceModal() {
+            document.getElementById('phoneChoiceModal').classList.remove('open');
+        }
+
+        // ==================== ডোনার ডিটেইলস / এডিট মডাল ====================
+        let currentModalDonorId = null;
+
+        function openDonorDetailModal(donorId, startInEdit = false) {
+            const donor = allDonors.find(d => d.id === donorId);
+            if (!donor) return;
+            currentModalDonorId = donorId;
+
+            if (startInEdit) {
+                renderDonorEditForm(donor);
+            } else {
+                renderDonorDetailView(donor);
+            }
+            document.getElementById('donorDetailModal').classList.add('open');
+        }
+
+        function closeDonorDetailModal() {
+            document.getElementById('donorDetailModal').classList.remove('open');
+            currentModalDonorId = null;
+        }
+
+        function renderDonorDetailView(donor) {
+            const availability = checkDonorAvailability(donor.lastDonation);
+            const isAvailable = availability.available;
+            const locationLine = [donor.upazila, donor.district, donor.division].filter(Boolean).join(', ') || 'লোকেশন নেই';
+
+            let lastDonationDisplay = 'রেকর্ড নেই';
+            if (donor.lastDonation) {
+                const date = new Date(donor.lastDonation);
+                lastDonationDisplay = `${date.getDate()} ${date.toLocaleString('bn-BD', { month: 'short' })} ${date.getFullYear()}`;
+            }
+
+            const content = document.getElementById('donorDetailContent');
+            content.innerHTML = `
+                <div class="detail-row"><i class="fas fa-user"></i> <strong>${escapeHtml(donor.fullName || 'নাম নেই')}</strong>
+                    <span class="blood-badge" style="margin-left:auto;">${donor.bloodGroup || '?'}</span>
+                </div>
+                <div class="detail-row"><i class="fas ${isAvailable ? 'fa-check-circle' : 'fa-ban'}"></i> ${isAvailable ? 'উপলব্ধ' : 'অনুপলব্ধ'}</div>
+                <div class="detail-row"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(locationLine)}</div>
+                <div class="detail-row"><i class="fas fa-location-dot"></i> ${escapeHtml(donor.area || 'বিস্তারিত ঠিকানা নেই')}</div>
+                <div class="detail-row"><i class="fas fa-calendar-alt"></i> শেষ দান: ${lastDonationDisplay}</div>
+                ${donor.note ? `<div class="detail-row"><i class="fas fa-sticky-note"></i> ${escapeHtml(donor.note)}</div>` : ''}
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="renderDonorEditForm(allDonors.find(d => d.id === '${donor.id}'))">
+                        <i class="fas fa-pen"></i> এডিট করুন
+                    </button>
+                    <button class="modal-btn primary" onclick="handleCallClick('${donor.id}')">
+                        <i class="fas fa-phone-alt"></i> কল করুন
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderDonorEditForm(donor) {
+            const divisions = Object.keys(bdGeoData);
+            const divisionOptions = divisions.map(d =>
+                `<option value="${d}" ${donor.division === d ? 'selected' : ''}>${d}</option>`
+            ).join('');
+
+            const content = document.getElementById('donorDetailContent');
+            content.innerHTML = `
+                <div class="edit-form-group">
+                    <label>পুরো নাম</label>
+                    <input type="text" class="edit-input" id="editFullName" value="${escapeHtml(donor.fullName || '')}">
+                </div>
+                <div class="edit-form-row">
+                    <div class="edit-form-group">
+                        <label>মোবাইল নম্বর ১</label>
+                        <input type="tel" class="edit-input" id="editPhone" value="${escapeHtml(donor.phone || '')}">
+                    </div>
+                    <div class="edit-form-group">
+                        <label>মোবাইল নম্বর ২ (ঐচ্ছিক)</label>
+                        <input type="tel" class="edit-input" id="editPhone2" value="${escapeHtml(donor.phone2 || '')}">
+                    </div>
+                </div>
+                <div class="edit-form-row">
+                    <div class="edit-form-group">
+                        <label>বিভাগ</label>
+                        <select class="edit-select" id="editDivision" onchange="populateEditDistricts(this.value)">
+                            <option value="">সিলেক্ট করুন</option>
+                            ${divisionOptions}
+                        </select>
+                    </div>
+                    <div class="edit-form-group">
+                        <label>জেলা</label>
+                        <select class="edit-select" id="editDistrict" onchange="populateEditUpazilas(document.getElementById('editDivision').value, this.value)">
+                            <option value="">প্রথমে বিভাগ সিলেক্ট করুন</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="edit-form-row">
+                    <div class="edit-form-group">
+                        <label>উপজেলা</label>
+                        <select class="edit-select" id="editUpazila">
+                            <option value="">প্রথমে জেলা সিলেক্ট করুন</option>
+                        </select>
+                    </div>
+                    <div class="edit-form-group">
+                        <label>বিস্তারিত ঠিকানা</label>
+                        <input type="text" class="edit-input" id="editArea" value="${escapeHtml(donor.area || '')}">
+                    </div>
+                </div>
+                <div id="editAlertBox" style="display:none; color: var(--danger); font-size: 13px; margin-bottom: 10px;"></div>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="renderDonorDetailView(allDonors.find(d => d.id === '${donor.id}'))">
+                        <i class="fas fa-times"></i> বাতিল
+                    </button>
+                    <button class="modal-btn primary" id="saveEditBtn" onclick="saveDonorEdit('${donor.id}')">
+                        <i class="fas fa-save"></i> সেভ করুন
+                    </button>
+                </div>
+            `;
+
+            // ক্যাসকেড ড্রপডাউন পূরণ (বিদ্যমান তথ্য অনুযায়ী)
+            populateEditDistricts(donor.division || '', donor.district || '');
+            populateEditUpazilas(donor.division || '', donor.district || '', donor.upazila || '');
+        }
+
+        function populateEditDistricts(divisionName, selectedDistrict = '') {
+            const districtSelect = document.getElementById('editDistrict');
+            if (!districtSelect) return;
+
+            const districtMap = bdGeoData[divisionName];
+            if (!districtMap) {
+                districtSelect.innerHTML = '<option value="">প্রথমে বিভাগ সিলেক্ট করুন</option>';
+                districtSelect.disabled = true;
+                populateEditUpazilas('', '');
+                return;
+            }
+
+            districtSelect.innerHTML = '<option value="">সিলেক্ট করুন</option>' +
+                Object.keys(districtMap).map(d =>
+                    `<option value="${d}" ${selectedDistrict === d ? 'selected' : ''}>${d}</option>`
+                ).join('');
+            districtSelect.disabled = false;
+        }
+
+        function populateEditUpazilas(divisionName, districtName, selectedUpazila = '') {
+            const upazilaSelect = document.getElementById('editUpazila');
+            if (!upazilaSelect) return;
+
+            const upazilas = (bdGeoData[divisionName] && bdGeoData[divisionName][districtName]) || null;
+            if (!upazilas) {
+                upazilaSelect.innerHTML = '<option value="">প্রথমে জেলা সিলেক্ট করুন</option>';
+                upazilaSelect.disabled = true;
+                return;
+            }
+
+            upazilaSelect.innerHTML = '<option value="">সিলেক্ট করুন</option>' +
+                upazilas.map(u =>
+                    `<option value="${u}" ${selectedUpazila === u ? 'selected' : ''}>${u}</option>`
+                ).join('');
+            upazilaSelect.disabled = false;
+        }
+
+        async function saveDonorEdit(donorId) {
+            const alertBox = document.getElementById('editAlertBox');
+            const saveBtn = document.getElementById('saveEditBtn');
+            alertBox.style.display = 'none';
+
+            const fullName = document.getElementById('editFullName').value.trim();
+            const phoneRaw = document.getElementById('editPhone').value.trim();
+            const phone2Raw = document.getElementById('editPhone2').value.trim();
+            const division = document.getElementById('editDivision').value;
+            const district = document.getElementById('editDistrict').value;
+            const upazila = document.getElementById('editUpazila').value;
+            const area = document.getElementById('editArea').value.trim();
+
+            const normalizedPhone = normalizePhoneNumber(phoneRaw);
+            if (!fullName || !normalizedPhone || !division || !district || !upazila) {
+                alertBox.textContent = 'অনুগ্রহ করে নাম, সঠিক মোবাইল নম্বর, বিভাগ, জেলা ও উপজেলা পূরণ করুন';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            let normalizedPhone2 = '';
+            if (phone2Raw) {
+                normalizedPhone2 = normalizePhoneNumber(phone2Raw);
+                if (!normalizedPhone2) {
+                    alertBox.textContent = 'দ্বিতীয় নম্বরটি সঠিক নয় (01XXXXXXXXX)';
+                    alertBox.style.display = 'block';
+                    return;
+                }
+                if (normalizedPhone2 === normalizedPhone) {
+                    alertBox.textContent = 'দুটি মোবাইল নম্বর একই দেওয়া যাবে না';
+                    alertBox.style.display = 'block';
+                    return;
+                }
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সেভ হচ্ছে...';
+
+            // ডুপ্লিকেট চেক (নিজের রেকর্ড বাদ দিয়ে)
+            const isDuplicate = await checkDuplicateDonorExcluding(normalizedPhone, donorId);
+            if (isDuplicate) {
+                alertBox.textContent = 'এই মোবাইল নম্বরে অন্য একজন ডোনার ইতিমধ্যে রেজিস্টার্ড আছে!';
+                alertBox.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> সেভ করুন';
+                return;
+            }
+            if (normalizedPhone2) {
+                const isDuplicate2 = await checkDuplicateDonorExcluding(normalizedPhone2, donorId);
+                if (isDuplicate2) {
+                    alertBox.textContent = 'দ্বিতীয় মোবাইল নম্বরটি অন্য একজন ডোনারের সাথে মিলে গেছে!';
+                    alertBox.style.display = 'block';
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> সেভ করুন';
+                    return;
+                }
+            }
+
+            try {
+                await db.collection('donors').doc(donorId).update({
+                    fullName,
+                    phone: normalizedPhone,
+                    phone2: normalizedPhone2,
+                    division,
+                    district,
+                    upazila,
+                    area,
+                    lastUpdated: new Date().toISOString()
+                });
+
+                // লোকাল ডেটা আপডেট
+                const donorIndex = allDonors.findIndex(d => d.id === donorId);
+                if (donorIndex !== -1) {
+                    allDonors[donorIndex] = {
+                        ...allDonors[donorIndex],
+                        fullName, phone: normalizedPhone, phone2: normalizedPhone2,
+                        division, district, upazila, area
+                    };
+                }
+
+                closeDonorDetailModal();
+                searchDonors();
+            } catch (error) {
+                console.error("Error updating donor:", error);
+                alertBox.textContent = 'সেভ করতে সমস্যা হয়েছে, আবার চেষ্টা করুন';
+                alertBox.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> সেভ করুন';
+            }
+        }
+
+        // ==================== SIDEBAR & THEME ====================
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const themeToggleSidebar = document.getElementById('themeToggleSidebar');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        async function logout() {
+            try {
+                if (currentUserId) {
+                    await database.ref('users/' + currentUserId).update({
+                        online: false,
+                        lastSeen: Date.now()
+                    });
+                }
+                await auth.signOut();
+                localStorage.clear();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error("Logout error:", error);
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        if (menuBtn) menuBtn.addEventListener('click', toggleSidebar);
+        if (overlay) overlay.addEventListener('click', toggleSidebar);
+        if (themeToggleSidebar) themeToggleSidebar.addEventListener('click', toggleTheme);
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar?.classList.contains('open')) {
+                toggleSidebar();
+            }
+        });
+
+        // Make functions global
+        window.searchDonors = searchDonors;
+        window.filterDonors = filterDonors;
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            initTheme();
+            setupDivisionChips();
+            populateDistrictDropdown();
+            await loadDonors();
+        });
+    </script>
+</body>
+  </html>

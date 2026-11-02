@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>লগইন - ভলান্টিয়ার প্যানেল</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #f8faf8;
+            --bg-secondary: #f0f5f0;
+            --fg: #1a2e1a;
+            --muted: #2d4a2d;
+            --accent: #16a34a;
+            --accent-dark: #15803d;
+            --card: #ffffff;
+            --border: #cbd5cb;
+            --glow: rgba(22, 163, 74, 0.15);
+        }
+        [data-theme="dark"] {
+            --bg: #0a1a0a;
+            --bg-secondary: #0f240f;
+            --fg: #eaf5ea;
+            --muted: #6ba36b;
+            --accent: #22c55e;
+            --accent-dark: #16a34a;
+            --card: #132713;
+            --border: #2a452a;
+        }
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 20%, rgba(22,163,74,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .login-container {
+            position: relative;
+            z-index: 1;
+            max-width: 450px;
+            width: 100%;
+            background: var(--card);
+            border-radius: 30px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--accent) 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--fg); }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--glow);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--glow); }
+        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .error-msg {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .success-msg {
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .floating-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.2;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        .orb-1 { width: 300px; height: 300px; background: var(--accent); top: -100px; right: -100px; }
+        .orb-2 { width: 200px; height: 200px; background: var(--accent-dark); bottom: 20%; left: -50px; }
+        @keyframes float {
+            0%,100% { transform: translate(0,0) scale(1); }
+            50% { transform: translate(-20px, 30px) scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+
+    <div class="login-container">
+        <div class="logo">ভলান্টিয়ার প্যানেল</div>
+        <div class="subtitle">আপনার অ্যাকাউন্ট দিয়ে লগইন করুন</div>
+        
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="success-msg" id="successMsg"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> ইমেইল</label>
+                <input type="email" id="email" placeholder="volunteer@bbds.com" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> পাসওয়ার্ড</label>
+                <input type="password" id="password" placeholder="পাসওয়ার্ড" required>
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> লগইন করুন</button>
+        </form>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkbx3T_QrtgHWCfAv_6Tltc_W5YxrFH-Q",
+            authDomain: "bbds-blood-network.firebaseapp.com",
+            databaseURL: "https://bbds-blood-network-default-rtdb.firebaseio.com",
+            projectId: "bbds-blood-network",
+            storageBucket: "bbds-blood-network.firebasestorage.app",
+            messagingSenderId: "865903022296",
+            appId: "1:865903022296:web:5322b0370c68e049fc87ad"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+
+        function showError(msg) {
+            const div = document.getElementById('errorMsg');
+            div.textContent = msg;
+            div.style.display = 'block';
+            setTimeout(() => div.style.display = 'none', 4000);
+        }
+
+        function showSuccess(msg) {
+            const div = document.getElementById('successMsg');
+            div.textContent = msg;
+            div.style.display = 'block';
+            setTimeout(() => div.style.display = 'none', 2000);
+        }
+
+        function setLoading(isLoading) {
+            const btn = document.getElementById('loginBtn');
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span> লগইন হচ্ছে...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> লগইন করুন';
+            }
+        }
+
+        // ==================== ইউজার স্ট্যাটাস চেক (ব্যান/ডিলিট) ====================
+        async function checkUserStatus(uid) {
+            try {
+                const snapshot = await database.ref('users/' + uid).once('value');
+                const userData = snapshot.val();
+                
+                // ইউজার ডিলিট হয়ে গেছে
+                if (!userData) {
+                    return { valid: false, reason: 'deleted' };
+                }
+                
+                // ইউজার ব্যান করা হয়েছে
+                if (userData.status === 'banned') {
+                    return { valid: false, reason: 'banned' };
+                }
+                
+                return { valid: true, userData: userData };
+            } catch (error) {
+                console.error("Status check error:", error);
+                return { valid: false, reason: 'error' };
+            }
+        }
+
+        // ==================== ফোর্স লগআউট ====================
+        async function forceLogoutAndClear(message) {
+            showError(message);
+            try {
+                const userId = localStorage.getItem('userId');
+                if (userId) {
+                    await database.ref('users/' + userId).update({
+                        online: false,
+                        lastSeen: Date.now()
+                    });
+                }
+            } catch (e) { console.error(e); }
+            
+            await auth.signOut();
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }
+
+        // ==================== আগে লগইন করা ইউজার চেক ====================
+        async function checkExistingLogin() {
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (userId && (userRole === 'volunteer' || userRole === 'admin')) {
+                try {
+                    const statusCheck = await checkUserStatus(userId);
+                    if (!statusCheck.valid) {
+                        if (statusCheck.reason === 'banned') {
+                            await forceLogoutAndClear('❌ আপনার অ্যাকাউন্ট ব্যান করা হয়েছে! প্রশাসকের সাথে যোগাযোগ করুন।');
+                        } else if (statusCheck.reason === 'deleted') {
+                            await forceLogoutAndClear('❌ আপনার অ্যাকাউন্ট ডিলিট করা হয়েছে!');
+                        }
+                        return false;
+                    }
+                    
+                    // সেশন বৈধ, হোম পেজে যান
+                    window.location.href = 'home.html';
+                    return true;
+                } catch (error) {
+                    console.error("Existing login check error:", error);
+                    await forceLogoutAndClear('সেশন চেক করতে সমস্যা হয়েছে, আবার লগইন করুন।');
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // ==================== লগইন হ্যান্ডলার ====================
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            document.getElementById('errorMsg').style.display = 'none';
+            
+            if (!email || !password) {
+                showError('ইমেইল এবং পাসওয়ার্ড দিন');
+                return;
+            }
+            
+            setLoading(true);
+            
+            try {
+                const userCred = await auth.signInWithEmailAndPassword(email, password);
+                const uid = userCred.user.uid;
+                
+                // ব্যান/ডিলিট চেক
+                const statusCheck = await checkUserStatus(uid);
+                
+                if (!statusCheck.valid) {
+                    await auth.signOut();
+                    if (statusCheck.reason === 'banned') {
+                        showError('❌ এই অ্যাকাউন্টটি ব্যান করা হয়েছে! প্রশাসকের সাথে যোগাযোগ করুন।');
+                    } else if (statusCheck.reason === 'deleted') {
+                        showError('❌ এই অ্যাকাউন্টটি ডিলিট করা হয়েছে!');
+                    } else {
+                        showError('❌ অ্যাকাউন্টটি বৈধ নয়।');
+                    }
+                    setLoading(false);
+                    return;
+                }
+                
+                const userData = statusCheck.userData;
+                
+                // শুধুমাত্র volunteer বা admin role যাদের, তারাই লগইন করতে পারবেন
+                if (userData.role !== 'volunteer' && userData.role !== 'admin') {
+                    await auth.signOut();
+                    showError('❌ এই অ্যাকাউন্টটি ভলান্টিয়ার অ্যাকাউন্ট নয়! শুধুমাত্র ভলান্টিয়াররা লগইন করতে পারবেন।');
+                    setLoading(false);
+                    return;
+                }
+                
+                // লোকাল স্টোরেজে তথ্য সেভ
+                localStorage.setItem('userId', uid);
+                localStorage.setItem('userName', userData.name || email.split('@')[0]);
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('userRole', userData.role);
+                localStorage.setItem('userPhone', userData.phone || '');
+                localStorage.setItem('userLoggedIn', 'true');
+                
+                // অনলাইন স্ট্যাটাস আপডেট
+                await database.ref('users/' + uid).update({
+                    online: true,
+                    lastSeen: Date.now(),
+                    name: userData.name || email.split('@')[0]
+                });
+                
+                database.ref('users/' + uid).onDisconnect().update({
+                    online: false,
+                    lastSeen: Date.now()
+                });
+                
+                showSuccess('✅ লগইন সফল! ড্যাশবোর্ডে যাচ্ছেন...');
+                
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 1500);
+                
+            } catch (err) {
+                console.error(err);
+                if (err.code === 'auth/user-not-found') {
+                    showError('এই ইমেইলে কোনো অ্যাকাউন্ট নেই');
+                } else if (err.code === 'auth/wrong-password') {
+                    showError('পাসওয়ার্ড ভুল');
+                } else if (err.code === 'auth/invalid-email') {
+                    showError('ইমেইল ঠিক নয়');
+                } else {
+                    showError('লগইন করতে সমস্যা হয়েছে');
+                }
+                setLoading(false);
+            }
+        });
+        
+        // পেজ লোড হলে আগের লগইন চেক করুন
+        document.addEventListener('DOMContentLoaded', async function() {
+            await checkExistingLogin();
+        });
+    </script>
+</body>
+</html>

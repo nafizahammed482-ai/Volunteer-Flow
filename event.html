@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ইভেন্ট সমূহ - Volunteer Flow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f8faf8;
+            --bg-secondary: #f0f5f0;
+            --fg: #1a2e1a;
+            --muted: #2d4a2d;
+            --accent: #16a34a;
+            --accent-dark: #15803d;
+            --accent-light: #dcfce7;
+            --card: #ffffff;
+            --card-hover: #f1f8f1;
+            --border: #cbd5cb;
+            --glow: rgba(22, 163, 74, 0.15);
+            --shadow: rgba(0, 0, 0, 0.05);
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+            --success: #10b981;
+            --orange: #f97316;
+            --orange-light: #ffedd5;
+            --teal: #14b8a6;
+            --teal-light: #ccfbf1;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a1a0a;
+            --bg-secondary: #0f240f;
+            --fg: #eaf5ea;
+            --muted: #6ba36b;
+            --accent: #22c55e;
+            --accent-dark: #16a34a;
+            --accent-light: #14532d;
+            --card: #132713;
+            --card-hover: #1a3a1a;
+            --border: #2a452a;
+            --glow: rgba(34, 197, 94, 0.3);
+            --shadow: rgba(0, 0, 0, 0.2);
+            --danger: #f87171;
+            --danger-light: #450a0a;
+            --warning: #fbbf24;
+            --warning-light: #451a03;
+            --info: #60a5fa;
+            --info-light: #1e3a5f;
+            --purple: #a78bfa;
+            --purple-light: #2e1065;
+            --orange: #fb923c;
+            --orange-light: #431407;
+            --teal: #2dd4bf;
+            --teal-light: #042f2e;
+        }
+
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--card);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+        }
+
+        .header-inner {
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, var(--accent) 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .header-icon:hover {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            color: var(--accent);
+            background: var(--card-hover);
+            transform: translateX(-3px);
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 20px;
+        }
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .summary-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .summary-count {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .summary-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* Search & Filter Card */
+        .search-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 13px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        @media (max-width: 550px) {
+            .filter-row {
+                flex-direction: column;
+            }
+            .search-box {
+                flex-direction: column;
+            }
+            .search-btn {
+                justify-content: center;
+            }
+        }
+
+        /* Tab Switch */
+        .tab-switch {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            gap: 4px;
+        }
+
+        .tab-switch-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: transparent;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-switch-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 10px var(--glow);
+        }
+
+        .tab-switch-btn .badge {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            font-size: 10px;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .tab-switch-btn:not(.active) .badge {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Count Badge */
+        .count-badge {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 10px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            border: 1px solid var(--border);
+        }
+
+        .count-badge i {
+            color: var(--accent);
+            margin-right: 6px;
+        }
+
+        /* Event List */
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Event Card */
+        .event-card {
+            background: var(--card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--glow);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Event Type Badge */
+        .event-type-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 1;
+        }
+
+        .event-type-badge.blood { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
+        .event-type-badge.cloth { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .event-type-badge.flood { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .event-type-badge.eid { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+        .event-type-badge.poor { background: linear-gradient(135deg, #f97316, #ea580c); color: white; }
+        .event-type-badge.medical { background: linear-gradient(135deg, #eab308, #ca8a04); color: white; }
+
+        .event-card-inner {
+            padding: 16px;
+        }
+
+        .event-date-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-secondary);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .event-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--fg);
+            margin-bottom: 8px;
+            padding-right: 80px;
+        }
+
+        .event-location {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .event-time {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .event-description {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
+        /* Donation Progress */
+        .donation-progress-wrap {
+            margin-bottom: 14px;
+        }
+
+        .donation-progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .donation-progress-header .raised {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #4ade80);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.full {
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+        }
+
+        /* Event Stats */
+        .event-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .stat-chip {
+            background: var(--bg-secondary);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .donor-link {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* Past Stats */
+        .past-stats {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .past-stat {
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .past-stat-value {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Action Button */
+        .event-action-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .event-action-btn.registered {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        .event-action-btn.past {
+            background: var(--bg-secondary);
+            color: var(--muted);
+            cursor: default;
+        }
+
+        .event-action-btn:hover:not(.past):not(.registered) {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px var(--glow);
+        }
+
+        /* Share Button */
+        .share-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .share-btn:hover {
+            background: var(--info);
+            color: white;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 420px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            position: relative;
+            animation: modalZoomIn 0.3s ease;
+        }
+
+        @keyframes modalZoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-banner {
+            width: 100%;
+            height: 100px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--fg);
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            font-size: 14px;
+            font-family: 'Hind Siliguri', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--glow);
+        }
+
+        .donation-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .donation-option {
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .donation-option:hover {
+            border-color: var(--accent);
+        }
+
+        .donation-option.selected {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .modal-btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        /* Donor List */
+        .donor-mini-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .donor-mini-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        /* Loading & Empty States */
+        .loading-placeholder, .empty-placeholder {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--muted);
+        }
+
+        .loading-placeholder i, .empty-placeholder i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+            opacity: 0.4;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--shadow);
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Points Toast */
+        .points-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1001;
+            animation: fadeInOut 2.5s ease;
+            white-space: nowrap;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        /* Confetti */
+        #confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent, var(--bg) 20%);
+            padding-top: 20px;
+            z-index: 100;
+        }
+
+        .bottom-nav-inner {
+            display: flex;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 15px var(--shadow);
+        }
+
+        .bottom-tab {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
+            position: relative;
+        }
+
+        .bottom-tab.active {
+            color: var(--accent);
+        }
+
+        .bottom-tab i {
+            font-size: 1.3rem;
+        }
+
+        .bottom-tab span {
+            font-size: 0.7rem;
+        }
+
+        .bottom-tab .badge {
+            position: absolute;
+            top: 0;
+            right: calc(50% - 20px);
+            background: var(--danger);
+            color: white;
+            font-size: 0.6rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 280px;
+            height: 100vh;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            transition: right 0.3s ease;
+            z-index: 99;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: -4px 0 20px var(--shadow);
+        }
+
+        .sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--fg);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-item:hover {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            margin: 12px 0;
+        }
+
+        .theme-toggle button {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px;
+            width: 52px;
+            height: 28px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .theme-toggle button::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            left: 3px;
+            top: 3px;
+            transition: transform 0.3s ease;
+        }
+
+        [data-theme="dark"] .theme-toggle button::before {
+            transform: translateX(26px);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 98;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .logout-item {
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+            padding-top: 12px;
+            color: var(--danger);
+        }
+
+        @media (max-width: 550px) {
+            .summary-grid {
+                gap: 8px;
+            }
+            .summary-count {
+                font-size: 18px;
+            }
+            .donation-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .event-title {
+                padding-right: 0;
+                font-size: 16px;
+            }
+            .event-type-badge {
+                position: static;
+                margin-bottom: 8px;
+                display: inline-flex;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">Volunteer Flow</div>
+            <div class="header-actions">
+                <button class="header-icon" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="event-page">
+            <!-- Back Button -->
+            <button class="back-btn" onclick="window.location.href='home.html'">
+                <i class="fas fa-arrow-left"></i>
+                ড্যাশবোর্ডে ফিরুন
+            </button>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-calendar-alt"></i> ইভেন্ট সমূহ
+                </h1>
+                <p class="page-subtitle">সকল ইভেন্টে রেজিস্ট্রার ও ডোনেশন করুন</p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-icon">📋</div>
+                    <div class="summary-count" id="totalEventsCount">0</div>
+                    <div class="summary-label">মোট ইভেন্ট</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">💰</div>
+                    <div class="summary-count" id="totalDonationCount">0</div>
+                    <div class="summary-label">মোট ডোনেশন (৳)</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">👥</div>
+                    <div class="summary-count" id="totalVolunteersCount">0</div>
+                    <div class="summary-label">মোট স্বেচ্ছাসেবক</div>
+                </div>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="search-card">
+                <div class="search-box">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input" id="searchInput" placeholder="ইভেন্ট নাম বা স্থান সার্চ করুন...">
+                    </div>
+                    <button class="search-btn" onclick="filterEvents()">
+                        <i class="fas fa-search"></i> খুঁজুন
+                    </button>
+                </div>
+                <div class="filter-row">
+                    <select class="filter-select" id="typeFilter" onchange="filterEvents()">
+                        <option value="">সব ধরণ</option>
+                        <option value="blood">🩸 ফ্রি ব্লাড গ্রুপিং</option>
+                        <option value="cloth">🧥 শীতবস্ত্র বিতরণ</option>
+                        <option value="flood">🌊 বন্যার্তদের সাহায্য</option>
+                        <option value="eid">🌙 ঈদ সহায়তা</option>
+                        <option value="poor">🤲 অসহায় সাহায্য</option>
+                        <option value="medical">🏥 মেডিকেল ক্যাম্প</option>
+                    </select>
+                    <select class="filter-select" id="locationFilter" onchange="filterEvents()">
+                        <option value="">সব জেলা</option>
+                        <option value="ঢাকা">ঢাকা</option>
+                        <option value="গাজীপুর">গাজীপুর</option>
+                        <option value="চট্টগ্রাম">চট্টগ্রাম</option>
+                        <option value="সিলেট">সিলেট</option>
+                        <option value="রাজশাহী">রাজশাহী</option>
+                        <option value="খুলনা">খুলনা</option>
+                        <option value="রংপুর">রংপুর</option>
+                        <option value="বরিশাল">বরিশাল</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tab Switch -->
+            <div class="tab-switch">
+                <button class="tab-switch-btn active" data-tab="upcoming" onclick="switchTab('upcoming')">
+                    <i class="fas fa-calendar-day"></i> আপকামিং
+                    <span class="badge" id="badgeUpcoming">0</span>
+                </button>
+                <button class="tab-switch-btn" data-tab="ongoing" onclick="switchTab('ongoing')">
+                    <i class="fas fa-play-circle"></i> চলমান
+                    <span class="badge" id="badgeOngoing">0</span>
+                </button>
+                <button class="tab-switch-btn" data-tab="past" onclick="switchTab('past')">
+                    <i class="fas fa-history"></i> বিগত
+                    <span class="badge" id="badgePast">0</span>
+                </button>
+            </div>
+
+            <!-- Count Badge -->
+            <div class="count-badge">
+                <span><i class="fas fa-calendar-alt"></i> দেখানো ইভেন্ট: <span id="countValue">0</span> টি</span>
+            </div>
+
+            <!-- Event List -->
+            <div class="event-list" id="eventList">
+                <div class="loading-placeholder">
+                    <i class="fas fa-spinner fa-pulse"></i>
+                    ইভেন্ট লোড হচ্ছে...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-tab" onclick="window.location.href='home.html'">
+                <i class="fas fa-home"></i><span>হোম</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user"></i><span>প্রোফাইল</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='chat.html'">
+                <i class="fas fa-comment-dots"></i><span>চ্যাট</span>
+                <span class="badge" id="bottomChatBadge">0</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='request.html'">
+                <i class="fas fa-clipboard-list"></i><span>রিকোয়েস্ট</span>
+                <span class="badge" id="bottomRequestBadge">0</span>
+            </button>
+            <button class="bottom-tab" onclick="window.location.href='leaderboard.html'">
+                <i class="fas fa-trophy"></i><span>লিডারবোর্ড</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><i class="fas fa-bars"></i> মেনু</h3>
+        <div class="sidebar-item" onclick="window.location.href='home.html'"><i class="fas fa-home"></i> <span>হোম</span></div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html'"><i class="fas fa-user"></i> <span>প্রোফাইল</span></div>
+        <div class="sidebar-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> <span>সেটিংস</span></div>
+        <div class="sidebar-item" onclick="window.location.href='our_team.html'"><i class="fas fa-users"></i> <span>আমার দল</span></div>
+        <div class="sidebar-item" onclick="window.location.href='event.html'"><i class="fas fa-calendar-alt"></i> <span>ইভেন্ট</span></div>
+        <div class="sidebar-item" onclick="window.location.href='profile.html#activities'"><i class="fas fa-tasks"></i> <span>আমার কার্যক্রম</span></div>
+        <div class="theme-toggle"><span><i class="fas fa-moon"></i> ডার্ক মোড</span><button id="themeToggleSidebar"></button></div>
+        <div class="sidebar-item logout-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span>লগআউট</span></div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Registration Modal -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeRegisterModal()">✕</button>
+            <div class="modal-banner" id="modalBanner">🩸</div>
+            <h3 class="modal-title" id="modalTitle">ইভেন্ট রেজিস্ট্রেশন</h3>
+            <form id="registrationForm" onsubmit="submitRegistration(event)">
+                <div class="form-group">
+                    <label class="form-label">পূর্ণ নাম *</label>
+                    <input type="text" class="form-input" id="regName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ফোন নম্বর *</label>
+                    <input type="tel" class="form-input" id="regPhone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ঠিকানা</label>
+                    <input type="text" class="form-input" id="regAddress">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ব্লাড গ্রুপ</label>
+                    <select class="form-select" id="regBloodGroup">
+                        <option value="">নির্বাচন করুন</option>
+                        <option value="A+">A+</option><option value="A-">A-</option>
+                        <option value="B+">B+</option><option value="B-">B-</option>
+                        <option value="O+">O+</option><option value="O-">O-</option>
+                        <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ডোনেশন (ঐচ্ছিক)</label>
+                    <div class="donation-options" id="donationOptions">
+                        <div class="donation-option" data-amount="100">৳১০০</div>
+                        <div class="donation-option" data-amount="200">৳২০০</div>
+                        <div class="donation-option" data-amount="500">৳৫০০</div>
+                        <div class="donation-option" data-amount="1000">৳১০০০</div>
+                    </div>
+                    <input type="number" class="form-input" id="customDonation" placeholder="নিজে লিখুন" style="margin-top:8px;">
+                </div>
+                <div class="form-group" id="gatewaySection" style="display:none;">
+                    <label class="form-label">পেমেন্ট গেটওয়ে *</label>
+                    <div class="donation-options" id="gatewayOptions">
+                        <div class="donation-option" data-gateway="bKash">bKash</div>
+                        <div class="donation-option" data-gateway="Nagad">Nagad</div>
+                        <div class="donation-option" data-gateway="Rocket">Rocket</div>
+                    </div>
+                    <div id="gatewayNumberBox" style="display:none; margin-top:8px; padding:10px; background:#f1f5f9; border-radius:10px; font-size:13px;">
+                        নম্বর: <b id="gatewayNumberValue"></b> — <span id="gatewayRefValue"></span>
+                    </div>
+                    <input type="text" class="form-input" id="transactionId" placeholder="ট্রানজেকশন আইডি লিখুন" style="margin-top:8px;">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-btn modal-btn-primary">রেজিস্ট্রার করুন</button>
+                    <button type="button" class="modal-btn modal-btn-secondary" onclick="closeRegisterModal()">বাতিল</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Donor List Modal -->
+    <div class="modal-overlay" id="donorListModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="document.getElementById('donorListModal').classList.remove('active')">✕</button>
+            <h3 class="modal-title">💝 ডোনার তালিকা</h3>
+            <div class="donor-mini-list" id="donorMiniList"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    <canvas id="confettiCanvas"></canvas>
+
+    <script>
+        // ==================== FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkbx3T_QrtgHWCfAv_6Tltc_W5YxrFH-Q",
+            authDomain: "bbds-blood-network.firebaseapp.com",
+            databaseURL: "https://bbds-blood-network-default-rtdb.firebaseio.com",
+            projectId: "bbds-blood-network",
+            storageBucket: "bbds-blood-network.firebasestorage.app",
+            messagingSenderId: "865903022296",
+            appId: "1:865903022296:web:5322b0370c68e049fc87ad"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ==================== EVENT DATA ====================
+        let allEvents = [];
+        let currentTab = 'upcoming';
+        let currentRegisterEvent = null;
+        let selectedDonationAmount = 0;
+        let currentSelectedGateway = '';
+        let currentUserId = null;
+        let currentUserData = null;
+
+        const gatewayData = {
+            bKash: { number: '০১৭৮৬৩১৯৯১৪', ref: 'Reference: BBDS_Event' },
+            Nagad: { number: '০১৭৮৬৩১৯৯১৪', ref: 'Reference: BBDS_Event' },
+            Rocket: { number: '০১৭৮৬৩১৯৯১৪', ref: 'Reference: BBDS_Event' }
+        };
+
+        // Load events from Firestore
+        async function loadEvents() {
+            try {
+                const snapshot = await db.collection('events').orderBy('date', 'desc').get();
+                allEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                await checkMyDonationStatus();
+                updateSummary();
+                displayEvents();
+            } catch (error) {
+                console.error('Error loading events:', error);
+                document.getElementById('eventList').innerHTML = `<div class="empty-placeholder"><i class="fas fa-exclamation-triangle"></i><h3>ইভেন্ট লোড করতে সমস্যা হয়েছে</h3></div>`;
+            }
+        }
+
+        // Check which events the current user already has a pending/approved donation for
+        async function checkMyDonationStatus() {
+            if (!currentUserId) return;
+            try {
+                const snapshot = await db.collection('eventDonations').where('userId', '==', currentUserId).get();
+                const map = new Map();
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    map.set(String(d.eventId), { status: d.status, amount: d.amount });
+                });
+                allEvents.forEach(e => {
+                    const found = map.get(String(e.id));
+                    e.myDonationStatus = found ? found.status : null;
+                    e.myDonationAmount = found ? found.amount : 0;
+                });
+            } catch (error) {
+                console.error('Error checking donation status:', error);
+            }
+        }
+
+        function updateSummary() {
+            const total = allEvents.length;
+            const totalDonation = allEvents.reduce((sum, e) => sum + (e.raisedAmount || 0), 0);
+            const totalVols = allEvents.reduce((sum, e) => sum + (e.registeredCount || 0), 0);
+            
+            document.getElementById('totalEventsCount').textContent = total;
+            document.getElementById('totalDonationCount').textContent = totalDonation.toLocaleString('bn-BD');
+            document.getElementById('totalVolunteersCount').textContent = totalVols;
+            
+            document.getElementById('badgeUpcoming').textContent = allEvents.filter(e => e.status === 'upcoming').length;
+            document.getElementById('badgeOngoing').textContent = allEvents.filter(e => e.status === 'ongoing').length;
+            document.getElementById('badgePast').textContent = allEvents.filter(e => e.status === 'past').length;
+        }
+
+        function getFilteredEvents() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const locationFilter = document.getElementById('locationFilter').value;
+            
+            return allEvents.filter(event => {
+                if (event.status !== currentTab) return false;
+                const title = (event.title || '').toLowerCase();
+                const location = (event.location || '').toLowerCase();
+                if (searchText && !title.includes(searchText) && !location.includes(searchText)) return false;
+                if (typeFilter && event.type !== typeFilter) return false;
+                if (locationFilter && event.district !== locationFilter) return false;
+                return true;
+            });
+        }
+
+        function displayEvents() {
+            const events = getFilteredEvents();
+            const eventList = document.getElementById('eventList');
+            document.getElementById('countValue').textContent = events.length;
+            
+            if (events.length === 0) {
+                eventList.innerHTML = `<div class="empty-placeholder"><i class="fas fa-calendar-times"></i><h3>কোন ইভেন্ট খুঁজে পাওয়া যায়নি</h3></div>`;
+                return;
+            }
+            
+            eventList.innerHTML = events.map((event, idx) => {
+                const isPast = event.status === 'past';
+                const isOngoing = event.status === 'ongoing';
+                const targetAmount = event.targetAmount || 0;
+                const raisedAmount = event.raisedAmount || 0;
+                const attendees = event.registeredCount || 0;
+                const maxAttendees = event.maxAttendees || 0;
+                const progressPercent = targetAmount > 0 ? Math.min(100, Math.round((raisedAmount / targetAmount) * 100)) : 0;
+                const progressClass = progressPercent >= 100 ? 'full' : '';
+                
+                let actionBtnHtml = '';
+                if (isPast) {
+                    actionBtnHtml = `<button class="event-action-btn past" disabled>বিগত ইভেন্ট</button>`;
+                } else if (event.myDonationStatus === 'pending') {
+                    actionBtnHtml = `<button class="event-action-btn registered" disabled>⏳ পেন্ডিং (অ্যাপ্রুভের অপেক্ষায়)</button>`;
+                } else if (event.myDonationStatus === 'approved') {
+                    actionBtnHtml = `<button class="event-action-btn registered" disabled>✅ রেজিস্টার্ড</button>`;
+                } else {
+                    actionBtnHtml = `<button class="event-action-btn" onclick="openRegisterModal(${idx})">📝 রেজিস্ট্রার করুন</button>`;
+                }
+                
+                let pastStatsHtml = '';
+                if (isPast && event.pastStats) {
+                    pastStatsHtml = `
+                        <div class="past-stats">
+                            ${event.pastStats.familiesHelped ? `<div class="past-stat"><div class="past-stat-value">${event.pastStats.familiesHelped}</div><div>পরিবার</div></div>` : ''}
+                            <div class="past-stat"><div class="past-stat-value">${event.pastStats.volunteers}</div><div>স্বেচ্ছাসেবক</div></div>
+                            <div class="past-stat"><div class="past-stat-value">${event.pastStats.hours}</div><div>ঘন্টা</div></div>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="event-card">
+                        <div class="event-type-badge ${event.typeClass || ''}">
+                            ${event.bannerEmoji || '📅'} ${event.typeLabel || ''}
+                        </div>
+                        <div class="event-card-inner">
+                            <div class="event-date-box">
+                                <i class="fas fa-calendar-alt"></i> ${event.dateDisplay || event.date || ''}
+                            </div>
+                            <h3 class="event-title">${event.title || ''}</h3>
+                            <div class="event-location">
+                                <i class="fas fa-map-marker-alt"></i> ${event.location || ''}
+                            </div>
+                            <div class="event-time">
+                                <i class="fas fa-clock"></i> ${event.time || ''}
+                            </div>
+                            <p class="event-description">${event.description || ''}</p>
+                            
+                            ${!isPast ? `
+                                <div class="donation-progress-wrap">
+                                    <div class="donation-progress-header">
+                                        <span>🎯 লক্ষ্য: ৳${targetAmount.toLocaleString('bn-BD')}</span>
+                                        <span class="raised">✅ ৳${raisedAmount.toLocaleString('bn-BD')}</span>
+                                    </div>
+                                    <div class="progress-bar"><div class="progress-fill ${progressClass}" style="width:${progressPercent}%"></div></div>
+                                </div>
+                                <div class="event-stats">
+                                    <span class="stat-chip"><i class="fas fa-percent"></i> ${progressPercent}% সম্পূর্ণ</span>
+                                    <span class="stat-chip donor-link" onclick="event.stopPropagation(); showDonorList('${event.id}')"><i class="fas fa-list"></i> ডোনার তালিকা দেখুন</span>
+                                </div>
+                            ` : `
+                                <div class="donation-progress-wrap">
+                                    <div class="donation-progress-header">
+                                        <span>🎯 লক্ষ্য: ৳${targetAmount.toLocaleString('bn-BD')}</span>
+                                        <span class="raised">✅ ৳${raisedAmount.toLocaleString('bn-BD')} (পূর্ণ)</span>
+                                    </div>
+                                    <div class="progress-bar"><div class="progress-fill full" style="width:100%"></div></div>
+                                </div>
+                            `}
+                            
+                            <div class="event-stats">
+                                <span class="stat-chip"><i class="fas fa-users"></i> অংশগ্রহণ: ${attendees}${maxAttendees ? '/' + maxAttendees : ''}</span>
+                            </div>
+                            
+                            ${actionBtnHtml}
+                        </div>
+                        <button class="share-btn" onclick="event.stopPropagation(); shareEvent('${(event.title || '').replace(/'/g, "\\'")}', '${(event.location || '').replace(/'/g, "\\'")}')">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Share Event
+        function shareEvent(title, location) {
+            const text = `Join us at ${title} at ${location}! Be a volunteer and help save lives.`;
+            if (navigator.share) {
+                navigator.share({ title: title, text: text, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(text);
+                showToast('📋 ইভেন্ট লিংক কপি করা হয়েছে!');
+            }
+        }
+
+        // Tab functions
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-switch-btn').forEach((btn, i) => {
+                const isActive = (tab === 'upcoming' && i === 0) || (tab === 'ongoing' && i === 1) || (tab === 'past' && i === 2);
+                btn.classList.toggle('active', isActive);
+            });
+            displayEvents();
+        }
+        
+        function filterEvents() { displayEvents(); }
+
+        // Modal functions
+        function openRegisterModal(eventIndex) {
+            const event = allEvents[eventIndex];
+            if (!event) return;
+            currentRegisterEvent = event;
+            
+            document.getElementById('modalBanner').textContent = event.bannerEmoji || '📅';
+            document.getElementById('modalTitle').textContent = event.title || '';
+            document.getElementById('regName').value = currentUserData?.name || '';
+            document.getElementById('regPhone').value = currentUserData?.phone || '';
+            document.getElementById('regAddress').value = '';
+            document.getElementById('regBloodGroup').value = '';
+            document.getElementById('customDonation').value = '';
+            document.getElementById('transactionId').value = '';
+            selectedDonationAmount = 0;
+            currentSelectedGateway = '';
+            document.querySelectorAll('.donation-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('gatewaySection').style.display = 'none';
+            document.getElementById('gatewayNumberBox').style.display = 'none';
+            
+            document.getElementById('regName').disabled = false;
+            document.getElementById('regPhone').disabled = false;
+            
+            document.getElementById('registerModal').classList.add('active');
+        }
+        
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+            currentRegisterEvent = null;
+        }
+        
+        function toggleGatewaySection() {
+            document.getElementById('gatewaySection').style.display = selectedDonationAmount > 0 ? 'block' : 'none';
+        }
+        
+        // Donation selection
+        document.getElementById('donationOptions').addEventListener('click', function(e) {
+            if (e.target.classList.contains('donation-option')) {
+                document.querySelectorAll('#donationOptions .donation-option').forEach(el => el.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedDonationAmount = parseInt(e.target.dataset.amount);
+                document.getElementById('customDonation').value = '';
+                toggleGatewaySection();
+            }
+        });
+        
+        document.getElementById('customDonation').addEventListener('input', function() {
+            const val = parseInt(this.value) || 0;
+            selectedDonationAmount = val;
+            document.querySelectorAll('#donationOptions .donation-option').forEach(el => el.classList.remove('selected'));
+            if (val === 100 || val === 200 || val === 500 || val === 1000) {
+                const match = document.querySelector(`#donationOptions .donation-option[data-amount="${val}"]`);
+                if (match) match.classList.add('selected');
+            }
+            toggleGatewaySection();
+        });
+        
+        // Gateway selection
+        document.getElementById('gatewayOptions').addEventListener('click', function(e) {
+            if (e.target.classList.contains('donation-option')) {
+                document.querySelectorAll('#gatewayOptions .donation-option').forEach(el => el.classList.remove('selected'));
+                e.target.classList.add('selected');
+                currentSelectedGateway = e.target.dataset.gateway;
+                const info = gatewayData[currentSelectedGateway];
+                if (info) {
+                    document.getElementById('gatewayNumberValue').textContent = info.number;
+                    document.getElementById('gatewayRefValue').textContent = info.ref;
+                    document.getElementById('gatewayNumberBox').style.display = 'block';
+                }
+            }
+        });
+        
+        async function submitRegistration(e) {
+            e.preventDefault();
+            if (!currentRegisterEvent) return;
+            
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const address = document.getElementById('regAddress').value.trim();
+            const bloodGroup = document.getElementById('regBloodGroup').value;
+            const donation = selectedDonationAmount;
+            
+            if (!name || !phone) {
+                showToast('⚠️ নাম ও ফোন নাম্বার আবশ্যক');
+                return;
+            }
+            
+            const phoneRegex = /^01[3-9]\d{8}$/;
+            if (!phoneRegex.test(phone)) {
+                showToast('⚠️ সঠিক মোবাইল নম্বর দিন (01XXXXXXXXX)');
+                return;
+            }
+            
+            if (donation > 0) {
+                if (!currentSelectedGateway) {
+                    showToast('⚠️ পেমেন্ট গেটওয়ে নির্বাচন করুন');
+                    return;
+                }
+                const transactionId = document.getElementById('transactionId').value.trim();
+                if (!transactionId) {
+                    showToast('⚠️ ট্রানজেকশন আইডি দিন');
+                    return;
+                }
+                
+                try {
+                    await db.collection('eventDonations').add({
+                        eventId: currentRegisterEvent.id,
+                        eventTitle: currentRegisterEvent.title,
+                        userId: currentUserId,
+                        userName: name,
+                        userPhone: phone,
+                        userAddress: address,
+                        userBloodGroup: bloodGroup,
+                        amount: donation,
+                        gateway: currentSelectedGateway,
+                        transactionId: transactionId,
+                        status: 'pending',
+                        source: 'volunteer',
+                        donatedAt: new Date().toISOString()
+                    });
+                    currentRegisterEvent.myDonationStatus = 'pending';
+                    startConfetti();
+                    showPointsToast(donation);
+                    showToast('✅ ডোনেশন পাঠানো হয়েছে! অ্যাডমিন অ্যাপ্রুভের পর নিশ্চিত হবে।');
+                } catch (error) {
+                    console.error(error);
+                    showToast('❌ ডোনেশন পাঠাতে সমস্যা হয়েছে');
+                    return;
+                }
+            } else {
+                // Plain attendance registration — no payment needed, confirm immediately
+                try {
+                    await db.collection('eventAttendees').add({
+                        eventId: currentRegisterEvent.id,
+                        eventTitle: currentRegisterEvent.title,
+                        userId: currentUserId,
+                        name, phone, address, bloodGroup,
+                        registeredAt: new Date().toISOString()
+                    });
+                    await db.collection('events').doc(String(currentRegisterEvent.id)).update({
+                        registeredCount: firebase.firestore.FieldValue.increment(1)
+                    });
+                    currentRegisterEvent.registeredCount = (currentRegisterEvent.registeredCount || 0) + 1;
+                    currentRegisterEvent.myDonationStatus = 'approved';
+                    showToast('✅ রেজিস্ট্রেশন সফল হয়েছে!');
+                } catch (error) {
+                    console.error(error);
+                    showToast('❌ রেজিস্ট্রেশন করতে সমস্যা হয়েছে');
+                    return;
+                }
+            }
+            
+            closeRegisterModal();
+            updateSummary();
+            displayEvents();
+        }
+        
+        async function showDonorList(eventId) {
+            try {
+                const snapshot = await db.collection('eventDonations')
+                    .where('eventId', '==', eventId)
+                    .where('status', '==', 'approved')
+                    .get();
+                if (snapshot.empty) {
+                    showToast('এখনো কেউ ডোনেট করেননি');
+                    return;
+                }
+                document.getElementById('donorMiniList').innerHTML = snapshot.docs.map(doc => {
+                    const d = doc.data();
+                    return `<div class="donor-mini-item"><span>👤 ${d.userName || 'N/A'}</span><span>৳${(d.amount || 0).toLocaleString('bn-BD')}</span></div>`;
+                }).join('');
+                document.getElementById('donorListModal').classList.add('active');
+            } catch (error) {
+                console.error(error);
+                showToast('ডোনার তালিকা লোড করতে সমস্যা হয়েছে');
+            }
+        }
+        
+        // Confetti effect
+        function startConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const colors = ['#16a34a', '#22c55e', '#4ade80', '#fbbf24', '#f59e0b'];
+            
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 6 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 3 + 2
+                });
+            }
+            
+            let animationId;
+            let startTime = Date.now();
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let allFinished = true;
+                for (let p of particles) {
+                    if (p.y < canvas.height + 50) {
+                        allFinished = false;
+                        p.y += p.speed;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, p.size, p.size);
+                    }
+                }
+                if (allFinished || Date.now() - startTime > 2000) {
+                    cancelAnimationFrame(animationId);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    animationId = requestAnimationFrame(animate);
+                }
+            }
+            animate();
+            setTimeout(() => cancelAnimationFrame(animationId), 2500);
+        }
+        
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function showPointsToast(amount) {
+            const toast = document.createElement('div');
+            toast.className = 'points-toast';
+            toast.innerHTML = `🎉 +${Math.floor(amount / 100)} পয়েন্ট! (ডোনেশন)`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+        
+        // Load unread counts
+        async function loadUnreadCounts() {
+            const userId = localStorage.getItem('userId');
+            if (!userId) return;
+            try {
+                const snapshot = await database.ref('chatRooms').once('value');
+                let chatUnread = 0, requestPending = 0;
+                snapshot.forEach(child => {
+                    const room = child.val();
+                    if (room.participants && room.participants[userId]) {
+                        chatUnread += room.unreadCount?.[userId] || 0;
+                    }
+                });
+                const reqSnapshot = await database.ref('bloodRequests').once('value');
+                reqSnapshot.forEach(child => { if (child.val().status === 'pending') requestPending++; });
+                document.getElementById('bottomChatBadge').textContent = chatUnread;
+                document.getElementById('bottomRequestBadge').textContent = requestPending;
+            } catch (error) { console.error("Error loading unread counts:", error); }
+        }
+        
+        // Sidebar & Theme
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const themeToggleSidebar = document.getElementById('themeToggleSidebar');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        function toggleSidebar() { if (sidebar && overlay) { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); } }
+        function initTheme() { const savedTheme = localStorage.getItem('theme') || 'light'; document.documentElement.setAttribute('data-theme', savedTheme); }
+        function toggleTheme() { const currentTheme = document.documentElement.getAttribute('data-theme'); const newTheme = currentTheme === 'light' ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', newTheme); localStorage.setItem('theme', newTheme); }
+        async function logout() { try { await auth.signOut(); localStorage.clear(); window.location.href = 'login.html'; } catch (error) { localStorage.clear(); window.location.href = 'login.html'; } }
+        
+        if (menuBtn) menuBtn.addEventListener('click', toggleSidebar);
+        if (overlay) overlay.addEventListener('click', toggleSidebar);
+        if (themeToggleSidebar) themeToggleSidebar.addEventListener('click', toggleTheme);
+        if (logoutBtn) logoutBtn.addEventListener('click', logout);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebar?.classList.contains('open')) toggleSidebar(); });
+        
+        document.getElementById('registerModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeRegisterModal(); });
+        document.getElementById('donorListModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('active'); });
+        
+        window.switchTab = switchTab;
+        window.filterEvents = filterEvents;
+        window.openRegisterModal = openRegisterModal;
+        window.closeRegisterModal = closeRegisterModal;
+        window.submitRegistration = submitRegistration;
+        window.showDonorList = showDonorList;
+        window.shareEvent = shareEvent;
+        
+        // ==================== AUTH CHECK ====================
+        async function checkAuth() {
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (userId) {
+                currentUserId = userId;
+                currentUserData = {
+                    name: localStorage.getItem('userName') || 'ভলান্টিয়ার',
+                    phone: localStorage.getItem('userPhone') || ''
+                };
+                return true;
+            }
+            
+            return new Promise((resolve) => {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        currentUserData = {
+                            name: localStorage.getItem('userName') || 'ভলান্টিয়ার',
+                            phone: localStorage.getItem('userPhone') || ''
+                        };
+                        localStorage.setItem('userId', user.uid);
+                        resolve(true);
+                    } else {
+                        window.location.href = 'login.html';
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            await checkAuth();
+            loadEvents();
+            loadUnreadCounts();
+        });
+    </script>
+</body>
+</html>
